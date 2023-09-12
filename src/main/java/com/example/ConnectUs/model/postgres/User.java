@@ -1,6 +1,7 @@
 package com.example.ConnectUs.model.postgres;
 
 
+import com.example.ConnectUs.enumerations.Gender;
 import com.example.ConnectUs.enumerations.Role;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,6 +10,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -33,6 +36,10 @@ public class User implements UserDetails {
     private String lastname;
     private String email;
     private String password;
+    private LocalDate dateOfBirth;
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @Enumerated(EnumType.STRING)
     private Role role;

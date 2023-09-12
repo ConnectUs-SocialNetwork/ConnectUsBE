@@ -1,8 +1,6 @@
 package com.example.ConnectUs.service;
 
-import com.example.ConnectUs.dto.authentication.AuthenticationRequest;
-import com.example.ConnectUs.dto.authentication.AuthenticationResponse;
-import com.example.ConnectUs.dto.authentication.RegisterRequest;
+import com.example.ConnectUs.dto.authentication.*;
 import com.example.ConnectUs.enumerations.TokenType;
 import com.example.ConnectUs.model.postgres.Token;
 import com.example.ConnectUs.model.postgres.User;
@@ -45,8 +43,8 @@ public class AuthenticationService {
         var refreshToken = jwtService.generateRefreshToken(user);
         saveUserToken(savedUser, jwtToken);
         return AuthenticationResponse.builder()
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
+                .tokens(TokensResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build())
+                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth()).gender(user.getGender()).build())
                 .build();
     }
 
@@ -64,8 +62,8 @@ public class AuthenticationService {
         revokeAllUserTokens(user);
         saveUserToken(user, jwtToken);
         return AuthenticationResponse.builder()
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
+                .tokens(TokensResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build())
+                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth()).gender(user.getGender()).build())
                 .build();
     }
 
@@ -111,8 +109,8 @@ public class AuthenticationService {
                 revokeAllUserTokens(user);
                 saveUserToken(user, accessToken);
                 var authResponse = AuthenticationResponse.builder()
-                        .accessToken(accessToken)
-                        .refreshToken(refreshToken)
+                        .tokens(TokensResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build())
+                        .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth()).gender(user.getGender()).build())
                         .build();
                 new ObjectMapper().writeValue(response.getOutputStream(), authResponse);
             }

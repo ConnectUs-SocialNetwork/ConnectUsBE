@@ -1,6 +1,7 @@
 package com.example.ConnectUs.service;
 
 import com.example.ConnectUs.dto.authentication.*;
+import com.example.ConnectUs.enumerations.Gender;
 import com.example.ConnectUs.enumerations.TokenType;
 import com.example.ConnectUs.model.postgres.Token;
 import com.example.ConnectUs.model.postgres.User;
@@ -12,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,6 +22,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +40,8 @@ public class AuthenticationService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
+                .dateOfBirth(LocalDate.parse(request.getDateOfBirth()))
+                .gender(Gender.valueOf(request.getGender()))
                 .build();
         var savedUser = repository.save(user);
         var jwtToken = jwtService.generateToken(user);
@@ -44,17 +49,27 @@ public class AuthenticationService {
         saveUserToken(savedUser, jwtToken);
         return AuthenticationResponse.builder()
                 .tokens(TokensResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build())
-                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth()).gender(user.getGender()).build())
+                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(user.getGender()).build())
+                .message("Successfully!")
                 .build();
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
+        try{
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+        }catch(BadCredentialsException e){
+            return AuthenticationResponse.builder()
+                    .tokens(new TokensResponse())
+                    .user(new UserResponse())
+                    .message("Email or password are not correct!")
+                    .build();
+
+        }
         var user = repository.findByEmail(request.getEmail())
                 .orElseThrow();
         var jwtToken = jwtService.generateToken(user);
@@ -63,7 +78,8 @@ public class AuthenticationService {
         saveUserToken(user, jwtToken);
         return AuthenticationResponse.builder()
                 .tokens(TokensResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build())
-                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth()).gender(user.getGender()).build())
+                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(user.getGender()).build())
+                .message("Successfully!")
                 .build();
     }
 
@@ -110,7 +126,8 @@ public class AuthenticationService {
                 saveUserToken(user, accessToken);
                 var authResponse = AuthenticationResponse.builder()
                         .tokens(TokensResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build())
-                        .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth()).gender(user.getGender()).build())
+                        .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(user.getGender()).build())
+                        .message("Successfully!")
                         .build();
                 new ObjectMapper().writeValue(response.getOutputStream(), authResponse);
             }

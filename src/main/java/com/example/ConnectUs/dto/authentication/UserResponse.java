@@ -18,5 +18,5 @@ public class UserResponse {
     private String lastname;
     private String email;
     private Gender gender;
-    private LocalDate dateOfBirth;
+    private String dateOfBirth;
 }

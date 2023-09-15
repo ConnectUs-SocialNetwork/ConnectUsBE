@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +37,15 @@ public class AuthenticationService {
 
     @Transactional(value = "chainedTransactionManager")
     public AuthenticationResponse register(RegisterRequest request) {
+        Optional<User> u = repository.findByEmail(request.getEmail());
+        if(u.isPresent()){
+            return AuthenticationResponse.builder()
+                    .tokens(new TokensResponse())
+                    .user(new UserResponse())
+                    .message("The entered email is already in use!")
+                    .build();
+        }
+
         //postgres
         var user = User.builder()
                 .firstname(request.getFirstname())
@@ -44,7 +54,7 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
                 .dateOfBirth(LocalDate.parse(request.getDateOfBirth()))
-                .gender(Gender.valueOf(request.getGender()))
+                .gender(Gender.valueOf(request.getGender().toUpperCase()))
                 .build();
         var savedUser = repository.save(user);
         var jwtToken = jwtService.generateToken(user);

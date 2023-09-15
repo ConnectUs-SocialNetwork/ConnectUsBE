@@ -3,22 +3,22 @@ package com.example.ConnectUs.service;
 import com.example.ConnectUs.dto.authentication.*;
 import com.example.ConnectUs.enumerations.Gender;
 import com.example.ConnectUs.enumerations.TokenType;
+import com.example.ConnectUs.model.neo4j.UserNeo4j;
 import com.example.ConnectUs.model.postgres.Token;
 import com.example.ConnectUs.model.postgres.User;
-import com.example.ConnectUs.repository.TokenRepository;
-import com.example.ConnectUs.repository.UserRepository;
+import com.example.ConnectUs.repository.neo4j.UserNeo4jRepository;
+import com.example.ConnectUs.repository.postgres.TokenRepository;
+import com.example.ConnectUs.repository.postgres.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -28,12 +28,15 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class AuthenticationService {
     private final UserRepository repository;
+    private final UserNeo4jRepository userNeo4jRepository;
     private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+    @Transactional(value = "chainedTransactionManager")
     public AuthenticationResponse register(RegisterRequest request) {
+        //postgres
         var user = User.builder()
                 .firstname(request.getFirstname())
                 .lastname(request.getLastname())
@@ -47,6 +50,17 @@ public class AuthenticationService {
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
         saveUserToken(savedUser, jwtToken);
+
+        //neo4j
+        UserNeo4j userNeo4j = UserNeo4j.builder()
+                .id(user.getId().longValue())
+                .email(user.getEmail())
+                .firstname(user.getFirstname())
+                .lastname(user.getLastname())
+                .build();
+
+        userNeo4jRepository.save(userNeo4j);
+
         return AuthenticationResponse.builder()
                 .tokens(TokensResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build())
                 .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(user.getGender()).build())

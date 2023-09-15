@@ -1,18 +1,14 @@
 package com.example.ConnectUs.config;
 
-import com.example.ConnectUs.repository.TokenRepository;
+import com.example.ConnectUs.repository.postgres.TokenRepository;
 import com.example.ConnectUs.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.beans.Transient;
 import java.io.IOException;
-import java.security.Security;
 
-import jakarta.transaction.TransactionScoped;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

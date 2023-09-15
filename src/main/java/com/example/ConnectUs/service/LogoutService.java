@@ -1,6 +1,6 @@
 package com.example.ConnectUs.service;
 
-import com.example.ConnectUs.repository.TokenRepository;
+import com.example.ConnectUs.repository.postgres.TokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package com.example.ConnectUs.config;
 
-import com.example.ConnectUs.repository.UserRepository;
+import com.example.ConnectUs.repository.postgres.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

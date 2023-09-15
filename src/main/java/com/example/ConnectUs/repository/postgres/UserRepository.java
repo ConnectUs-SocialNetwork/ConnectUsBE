@@ -1,4 +1,4 @@
-package com.example.ConnectUs.repository;
+package com.example.ConnectUs.repository.postgres;
 
 import java.util.Optional;
 

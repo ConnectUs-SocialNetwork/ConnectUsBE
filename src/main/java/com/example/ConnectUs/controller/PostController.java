@@ -3,9 +3,10 @@ package com.example.ConnectUs.controller;
 import ch.qos.logback.core.CoreConstants;
 import com.example.ConnectUs.dto.authentication.AuthenticationResponse;
 import com.example.ConnectUs.dto.authentication.RegisterRequest;
-import com.example.ConnectUs.dto.post.GetPostRequest;
+import com.example.ConnectUs.dto.post.GetPostsRequest;
 import com.example.ConnectUs.dto.post.PostRequest;
 import com.example.ConnectUs.dto.post.PostResponse;
+import com.example.ConnectUs.dto.post.PostsResponse;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.service.AuthenticationService;
@@ -15,10 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -59,15 +57,15 @@ public class PostController {
         }
         Post post = Post.builder()
                 .text(request.getPostText())
-                .imageName(fileName)
+                .imageData(request.getImageInBase64())
                 .dateAndTime(LocalDateTime.now())
                 .user(user)
                 .build();
         return ResponseEntity.ok(postService.save(post));
     }
 
-    @GetMapping
-    public ResponseEntity<PostResponse> getById(@RequestBody GetPostRequest post){
-        return ResponseEntity.ok(postService.getById(post.getId()));
+    @GetMapping("/feed")
+    public ResponseEntity<PostsResponse> getPostsForFeed(@RequestParam Integer userId){
+        return ResponseEntity.ok(postService.getPostsForFeed(userId));
     }
 }

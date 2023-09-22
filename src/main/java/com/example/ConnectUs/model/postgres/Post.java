@@ -26,8 +26,6 @@ public class Post {
     @GeneratedValue
     private Integer id;
     private String text;
-    //private String imageName;
-    //@Lob
     @Column(name = "imagedata", columnDefinition = "TEXT")
     private String imageData;
     private LocalDateTime dateAndTime;

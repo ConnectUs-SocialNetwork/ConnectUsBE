@@ -1,11 +1,13 @@
 package com.example.ConnectUs.service;
 
+import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.repository.postgres.PostRepository;
-import com.example.ConnectUs.util.ImageUtil;
+import com.example.ConnectUs.repository.postgres.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
@@ -20,14 +22,14 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PostService {
     private final PostRepository postRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public Post save(Post post){
@@ -58,95 +60,85 @@ public class PostService {
 
 
     }*/
+    @Transactional
+    public PostsResponse getPostsForFeed(Integer id){
+        Optional<User> user = userRepository.findById(id);
 
-    public String generateUniqueFileName(User user) {
-        String email = user.getEmail().replaceAll("[^a-zA-Z0-9]", "_");
-        String timestamp = String.valueOf(System.currentTimeMillis());
+        List<Post> posts = postRepository.findAllByUserId(id);
 
-        return email + "_" + timestamp + ".png";
+        PostsResponse postsResponse = getPostsResponseFromPostsList(posts, user.get());
+
+        return postsResponse;
     }
 
-    /*public PostsResponse getPostsForFeed(Integer id){
+    private List<UserResponse> getUserResponseListFromUserList(List<User> userList){
+        List<UserResponse> retList = new ArrayList<>();
+
+        for (User user : userList){
+
+            UserResponse userResponse = UserResponse.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .dateOfBirth(user.getDateOfBirth().toString())
+                    .firstname(user.getFirstname())
+                    .lastname(user.getLastname())
+                    .gender(user.getGender())
+                    .build();
+
+            retList.add(userResponse);
+        }
+
+        return retList;
+    }
+
+    private PostsResponse getPostsResponseFromPostsList(List<Post> posts, User user){
         PostsResponse postsResponse = new PostsResponse();
         List<PostResponse> postResponseList = new ArrayList<>();
+        for(Post post : posts){
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            String formattedDateTime = post.getDateAndTime().format(formatter);
+            boolean isLiked = post.getLikes().contains(user);
 
-        List<Post> posts = postRepository.findAllByUserId(id);
-        for(Post post : posts) {
-            Resource imgFile = new ClassPathResource("images" + File.separator + post.getImageName());
-
-            try {
-                InputStreamResource isr = new InputStreamResource(imgFile.getInputStream());
-                byte[] bytes = isr.getContentAsByteArray();
-                String image = Base64.getEncoder().encodeToString(bytes);
-
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                String formattedDateTime = post.getDateAndTime().format(formatter);
-
-                PostResponse postResponse = PostResponse.builder()
-                        .id(post.getId())
-                        .imageInBase64(image)
-                        .text(post.getText())
-                        .dateAndTime(formattedDateTime)
-                        .build();
-                postResponseList.add(postResponse);
-            } catch (Exception e) {
-                return new PostsResponse();
-            }
+            PostResponse postResponse = PostResponse.builder()
+                    .id(post.getId())
+                    .imageInBase64(post.getImageData())
+                    .text(post.getText())
+                    .dateAndTime(formattedDateTime)
+                    .isLiked(isLiked)
+                    .likes(getUserResponseListFromUserList(post.getLikes()))
+                    .build();
+            postResponseList.add(postResponse);
         }
         postsResponse.setPosts(postResponseList);
+        Collections.sort(postsResponse.getPosts(), Collections.reverseOrder());
         return postsResponse;
-    }*/
-    /*ovo brisi public PostsResponse getPostsForFeed(Integer id){
-        PostsResponse postsResponse = new PostsResponse();
-        List<PostResponse> postResponseList = new ArrayList<>();
+    }
 
-        List<Post> posts = postRepository.findAllByUserId(id);
-        for(Post post : posts) {
-            try {
-                String image = Base64.getEncoder().encodeToString(ImageUtil.decompressImage(post.getImageData()));
+    @Transactional
+    public void likePost(Integer userId, Integer postId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                String formattedDateTime = post.getDateAndTime().format(formatter);
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
 
-                PostResponse postResponse = PostResponse.builder()
-                        .id(post.getId())
-                        .imageInBase64(image)
-                        .text(post.getText())
-                        .dateAndTime(formattedDateTime)
-                        .build();
-                postResponseList.add(postResponse);
-            } catch (Exception e) {
-                return new PostsResponse();
-            }
-        }
-        postsResponse.setPosts(postResponseList);
-        return postsResponse;
-    }*/
+        List<Post> likedPosts = user.getLikedPosts();
+        likedPosts.add(post);
+        user.setLikedPosts(likedPosts);
+        userRepository.save(user);
+    }
 
-    public PostsResponse getPostsForFeed(Integer id){
-        PostsResponse postsResponse = new PostsResponse();
-        List<PostResponse> postResponseList = new ArrayList<>();
+    @Transactional
+    public void unlikePost(Integer userId, Integer postId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        List<Post> posts = postRepository.findAllByUserId(id);
-        for(Post post : posts) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
 
-            try {
-
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                String formattedDateTime = post.getDateAndTime().format(formatter);
-
-                PostResponse postResponse = PostResponse.builder()
-                        .id(post.getId())
-                        .imageInBase64(post.getImageData())
-                        .text(post.getText())
-                        .dateAndTime(formattedDateTime)
-                        .build();
-                postResponseList.add(postResponse);
-            } catch (Exception e) {
-                return new PostsResponse();
-            }
-        }
-        postsResponse.setPosts(postResponseList);
-        return postsResponse;
+        List<Post> likedPosts = user.getLikedPosts();
+        likedPosts.remove(post);
+        user.setLikedPosts(likedPosts);
+        userRepository.save(user);
     }
 }

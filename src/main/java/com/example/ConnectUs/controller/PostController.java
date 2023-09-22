@@ -1,32 +1,19 @@
 package com.example.ConnectUs.controller;
 
-import ch.qos.logback.core.CoreConstants;
-import com.example.ConnectUs.dto.authentication.AuthenticationResponse;
-import com.example.ConnectUs.dto.authentication.RegisterRequest;
-import com.example.ConnectUs.dto.post.GetPostsRequest;
+import com.example.ConnectUs.dto.post.LikeResponse;
 import com.example.ConnectUs.dto.post.PostRequest;
-import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
-import com.example.ConnectUs.service.AuthenticationService;
 import com.example.ConnectUs.service.PostService;
 import com.example.ConnectUs.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.UUID;
 
 @Controller
 @RequestMapping("/api/v1/post")
@@ -41,20 +28,7 @@ public class PostController {
     public ResponseEntity<Post> save(
             @RequestBody PostRequest request
     ) {
-        byte[] imageBytes = Base64.getDecoder().decode(request.getImageInBase64());
         User user = userService.findByEmail(request.getUserEmail()).orElse(new User());
-
-        String fileName = postService.generateUniqueFileName(user);
-
-        // Kreirajte putanju za čuvanje slike
-        String imagePath = fileDirectory + File.separator + fileName;
-
-        // Sačuvajte sliku na odgovarajućoj putanji
-        try (FileOutputStream stream = new FileOutputStream(imagePath)) {
-            stream.write(imageBytes);
-        }catch (Exception e){
-            return ResponseEntity.status(500).body(new Post());
-        }
         Post post = Post.builder()
                 .text(request.getPostText())
                 .imageData(request.getImageInBase64())
@@ -67,5 +41,17 @@ public class PostController {
     @GetMapping("/feed")
     public ResponseEntity<PostsResponse> getPostsForFeed(@RequestParam Integer userId){
         return ResponseEntity.ok(postService.getPostsForFeed(userId));
+    }
+
+    @PostMapping("/like")
+    public ResponseEntity<LikeResponse> likePost(@RequestParam Integer userId, @RequestParam Integer postId){
+        postService.likePost(userId, postId);
+        return ResponseEntity.ok(new LikeResponse("Successfully!"));
+    }
+
+    @PostMapping("/unlike")
+    public ResponseEntity<LikeResponse> unlikePost(@RequestParam Integer userId, @RequestParam Integer postId){
+        postService.unlikePost(userId, postId);
+        return ResponseEntity.ok(new LikeResponse("Successfully!"));
     }
 }

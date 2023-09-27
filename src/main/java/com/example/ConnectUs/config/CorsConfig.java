@@ -12,19 +12,23 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
 
-        registry.addMapping("/api/v1/auth/**")		// dozvoljava cross-origin zahteve ka navedenim putanjama
-                .allowedOrigins("http://127.0.0.1:5173")	// postavice Access-Control-Allow-Origin header u preflight zahtev
+        registry.addMapping("/api/v1/**")
+                .allowedOrigins("http://127.0.0.1:5173")
                 .allowedMethods("*")
                 .allowCredentials(true)
-                .maxAge(3600);		// definise u sekundama koliko dugo se preflight response cuva u browseru
+                .maxAge(3600);
 
-        registry.addMapping("/api/v1/post/**")		// dozvoljava cross-origin zahteve ka navedenim putanjama
-                .allowedOrigins("http://127.0.0.1:5173")	// postavice Access-Control-Allow-Origin header u preflight zahtev
+        /*registry.addMapping("/api/v1/post/**")
+                .allowedOrigins("http://127.0.0.1:5173")
                 .allowedMethods("*")
                 .allowCredentials(true)
-                .maxAge(3600);		// definise u sekundama koliko dugo se preflight response cuva u browseru
+                .maxAge(3600);
 
-
+        registry.addMapping("/api/v1/user/**")
+                .allowedOrigins("http://127.0.0.1:5173")
+                .allowedMethods("*")
+                .allowCredentials(true)
+                .maxAge(3600);*/
     }
 
 }

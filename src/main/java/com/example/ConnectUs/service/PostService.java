@@ -32,8 +32,18 @@ public class PostService {
     private final UserRepository userRepository;
 
     @Transactional
-    public Post save(Post post){
-        return postRepository.save(post);
+    public PostResponse save(Post post){
+        Post savedPost = postRepository.save(post);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedDateTime = savedPost.getDateAndTime().format(formatter);
+        return PostResponse.builder()
+                .isLiked(false)
+                .id(savedPost.getId())
+                .imageInBase64(savedPost.getImageData())
+                .text(savedPost.getText())
+                .dateAndTime(formattedDateTime)
+                .likes(new ArrayList<UserResponse>())
+                .build();
     }
     /*@Transactional
     public PostResponse getById(Integer id) {
@@ -83,6 +93,7 @@ public class PostService {
                     .firstname(user.getFirstname())
                     .lastname(user.getLastname())
                     .gender(user.getGender())
+                    .profileImage(user.getProfileImage())
                     .build();
 
             retList.add(userResponse);

@@ -22,6 +22,7 @@ public class UserNeo4j {
     private String firstname;
     private String lastname;
     private String email;
+    private String profileImage;
 
     @Relationship(type = "FRIENDS_WITH")
     private Set<UserNeo4j> friends;

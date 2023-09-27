@@ -2,6 +2,7 @@ package com.example.ConnectUs.service;
 
 import com.example.ConnectUs.dto.authentication.*;
 import com.example.ConnectUs.enumerations.Gender;
+import com.example.ConnectUs.enumerations.Role;
 import com.example.ConnectUs.enumerations.TokenType;
 import com.example.ConnectUs.model.neo4j.UserNeo4j;
 import com.example.ConnectUs.model.postgres.Token;
@@ -52,9 +53,10 @@ public class AuthenticationService {
                 .lastname(request.getLastname())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(request.getRole())
+                .role(Role.REGISTERED_USER)
                 .dateOfBirth(LocalDate.parse(request.getDateOfBirth()))
                 .gender(Gender.valueOf(request.getGender().toUpperCase()))
+                .profileImage("")
                 .build();
         var savedUser = repository.save(user);
         var jwtToken = jwtService.generateToken(user);
@@ -67,6 +69,7 @@ public class AuthenticationService {
                 .email(user.getEmail())
                 .firstname(user.getFirstname())
                 .lastname(user.getLastname())
+                .profileImage("")
                 .build();
 
         userNeo4jRepository.save(userNeo4j);

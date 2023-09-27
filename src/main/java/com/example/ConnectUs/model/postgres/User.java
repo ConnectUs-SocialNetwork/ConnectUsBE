@@ -33,6 +33,7 @@ public class User implements UserDetails {
     private String email;
     private String password;
     private LocalDate dateOfBirth;
+    private String profileImage;
 
     @Enumerated(EnumType.STRING)
     private Gender gender;
@@ -43,8 +44,12 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user")
     private List<Token> tokens;
 
-    /*@OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Post> posts = new ArrayList<>();*/
+    @ManyToMany
+    @JoinTable(
+            name = "friendship",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "friend_id"))
+    private List<User> friends;
 
     @ManyToMany
     @JoinTable(

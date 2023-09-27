@@ -2,6 +2,7 @@ package com.example.ConnectUs.controller;
 
 import com.example.ConnectUs.dto.post.LikeResponse;
 import com.example.ConnectUs.dto.post.PostRequest;
+import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
@@ -22,10 +23,8 @@ public class PostController {
     private final PostService postService;
     private final UserService userService;
 
-    private final String fileDirectory = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "images";
-
     @PostMapping("/save")
-    public ResponseEntity<Post> save(
+    public ResponseEntity<PostResponse> save(
             @RequestBody PostRequest request
     ) {
         User user = userService.findByEmail(request.getUserEmail()).orElse(new User());

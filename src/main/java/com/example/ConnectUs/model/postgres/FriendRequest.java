@@ -14,7 +14,7 @@ import lombok.*;
 public class FriendRequest {
     @Id
     @GeneratedValue
-    private Long id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

@@ -2,6 +2,7 @@ package com.example.ConnectUs.controller;
 
 import com.example.ConnectUs.dto.friendRequest.FriendRequestDTO;
 import com.example.ConnectUs.dto.friendRequest.FriendRequestResponse;
+import com.example.ConnectUs.dto.friendRequest.ProcessFriendRequestResponse;
 import com.example.ConnectUs.dto.friendRequest.ProcessRequestDTO;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.postgres.FriendRequest;
@@ -35,10 +36,14 @@ public class FriendRequestController {
     }
 
     @PutMapping("/processRequest")
-    public ResponseEntity processRequest(@RequestBody ProcessRequestDTO processRequestDTO){
+    public ResponseEntity<ProcessFriendRequestResponse> processRequest(@RequestBody ProcessRequestDTO processRequestDTO){
         try{
             FriendRequest friendRequest = friendRequestService.processRequest(processRequestDTO);
-            return ResponseEntity.ok(friendRequest);
+            ProcessFriendRequestResponse res = ProcessFriendRequestResponse.builder()
+                    .id(friendRequest.getId())
+                    .status(friendRequest.getStatus())
+                    .build();
+            return ResponseEntity.ok(res);
         }catch (DatabaseAccessException e){
             return ResponseEntity.status(500).body(null);
         }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +27,25 @@ public class UserService {
     }
 
     public List<SearchUserResponse> searchUsers(Integer userId, String searchText) {
-        return null;
+        try{
+            User user = userRepository.findById(userId).orElseThrow();
+            List<User> userList = userRepository.findFriendsAndNonFriendsBySearchText(searchText, userId);
+            userList.sort(Comparator.comparing(u -> !user.getFriends().contains(u)));
+            List<SearchUserResponse> responseList = new ArrayList<>();
+            for(User u : userList) {
+                SearchUserResponse searchUserResponse = SearchUserResponse.builder()
+                        .id(u.getId())
+                        .profileImage(u.getProfileImage())
+                        .friend(user.getFriends().contains(u))
+                        .email(u.getEmail())
+                        .firstname(u.getFirstname())
+                        .lastname(u.getLastname())
+                        .build();
+                responseList.add(searchUserResponse);
+            }
+            return responseList;
+        }catch (DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
+        }
     }
 }

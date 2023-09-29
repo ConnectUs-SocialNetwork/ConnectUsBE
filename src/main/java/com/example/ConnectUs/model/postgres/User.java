@@ -59,6 +59,9 @@ public class User implements UserDetails {
     @JsonIgnore
     private List<Post> likedPosts;
 
+    @ManyToMany(mappedBy = "taggedUsers")
+    private List<Image> taggedImages;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return role.getAuthorities();

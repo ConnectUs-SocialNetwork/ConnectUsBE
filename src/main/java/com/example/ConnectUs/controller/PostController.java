@@ -4,11 +4,13 @@ import com.example.ConnectUs.dto.post.LikeResponse;
 import com.example.ConnectUs.dto.post.PostRequest;
 import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
+import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.service.PostService;
 import com.example.ConnectUs.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -52,5 +54,14 @@ public class PostController {
     public ResponseEntity<LikeResponse> unlikePost(@RequestParam Integer userId, @RequestParam Integer postId){
         postService.unlikePost(userId, postId);
         return ResponseEntity.ok(new LikeResponse("Successfully!"));
+    }
+
+    @GetMapping("/getUserPosts")
+    public ResponseEntity<PostsResponse> getUserPosts(@RequestParam Integer userId, @RequestParam Integer myId){
+        try{
+            return ResponseEntity.ok(postService.getUserPosts(userId, myId));
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
     }
 }

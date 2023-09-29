@@ -29,6 +29,7 @@ public class UserService {
     public List<SearchUserResponse> searchUsers(Integer userId, String searchText) {
         try{
             User user = userRepository.findById(userId).orElseThrow();
+            String[] searchTextArray = searchText.split(" ");
             List<User> userList = userRepository.findFriendsAndNonFriendsBySearchText(searchText, userId);
             userList.sort(Comparator.comparing(u -> !user.getFriends().contains(u)));
             List<SearchUserResponse> responseList = new ArrayList<>();
@@ -46,6 +47,54 @@ public class UserService {
             return responseList;
         }catch (DataAccessException e){
             throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    @Transactional
+    public List<SearchUserResponse> getUserFriends(Integer userId, Integer myId){
+        try{
+            User user = userRepository.findById(userId).orElseThrow();
+            User myUser = userRepository.findById(myId).orElseThrow();
+
+            List<SearchUserResponse> responseList = new ArrayList<>();
+            for(User u : user.getFriends()) {
+                SearchUserResponse searchUserResponse = SearchUserResponse.builder()
+                        .id(u.getId())
+                        .profileImage(u.getProfileImage())
+                        .friend(myUser.getFriends().contains(u))
+                        .email(u.getEmail())
+                        .firstname(u.getFirstname())
+                        .lastname(u.getLastname())
+                        .build();
+                responseList.add(searchUserResponse);
+            }
+            return responseList;
+        }catch(DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    public List<SearchUserResponse> getUserMutualFriends(Integer userId, Integer myId){
+        try{
+            List<UserNeo4j> mutualFriends = userNeo4jRepository.findMutualFriends(userId.longValue(), myId.longValue());
+            List<SearchUserResponse> responseList = new ArrayList<>();
+
+            for(UserNeo4j u : mutualFriends){
+                SearchUserResponse userResponse = SearchUserResponse.builder()
+                        .id(u.getId().intValue())
+                        .friend(true)
+                        .firstname(u.getFirstname())
+                        .lastname(u.getLastname())
+                        .email(u.getEmail())
+                        .profileImage(u.getProfileImage())
+                        .build();
+
+                responseList.add(userResponse);
+            }
+
+            return responseList;
+        }catch (DataAccessException e){
+            throw  new DatabaseAccessException(e.getMessage());
         }
     }
 }

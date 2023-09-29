@@ -10,5 +10,8 @@ import java.util.List;
 
 @Repository
 public interface UserNeo4jRepository extends Neo4jRepository<UserNeo4j, Long> {
-
+    @Query("MATCH (u:UserNeo4j)-[:FRIENDS_WITH]->(commonFriend:UserNeo4j)<-[:FRIENDS_WITH]-(me:UserNeo4j) " +
+            "WHERE id(u) = $userId AND id(me) = $myId " +
+            "RETURN commonFriend")
+    List<UserNeo4j> findMutualFriends(@Param("userId") Long userId, @Param("myId") Long myId);
 }

@@ -1,6 +1,7 @@
 package com.example.ConnectUs.controller;
 
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
+import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
@@ -23,6 +24,24 @@ public class UserController {
             return ResponseEntity.ok(userService.searchUsers(userId, searchText));
         }catch (DataAccessException e){
             return ResponseEntity.status(500).body(new ArrayList<>());
+        }
+    }
+
+    @GetMapping("/getUserFriends")
+    public ResponseEntity<List<SearchUserResponse>> getUserFriends(@RequestParam Integer userId, @RequestParam Integer myId){
+        try{
+            return ResponseEntity.ok(userService.getUserFriends(userId, myId));
+        }catch(DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @GetMapping("/getUserMutualFriends")
+    public ResponseEntity<List<SearchUserResponse>> getUserMutualriends(@RequestParam Integer userId, @RequestParam Integer myId){
+        try{
+            return ResponseEntity.ok(userService.getUserMutualFriends(userId, myId));
+        }catch(DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
         }
     }
 }

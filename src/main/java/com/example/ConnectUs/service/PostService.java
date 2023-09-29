@@ -3,6 +3,7 @@ package com.example.ConnectUs.service;
 import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
+import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.repository.postgres.PostRepository;
@@ -14,6 +15,7 @@ import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
@@ -151,5 +153,17 @@ public class PostService {
         likedPosts.remove(post);
         user.setLikedPosts(likedPosts);
         userRepository.save(user);
+    }
+
+    @Transactional
+    public PostsResponse getUserPosts(Integer userId, Integer myId){
+        try{
+            List<Post> postList = postRepository.findAllByUserId(userId);
+            User user = userRepository.findById(myId).orElseThrow();
+            PostsResponse postsResponse = getPostsResponseFromPostsList(postList, user);
+            return postsResponse;
+        }catch (DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
+        }
     }
 }

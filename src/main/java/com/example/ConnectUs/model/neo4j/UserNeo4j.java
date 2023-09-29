@@ -28,6 +28,5 @@ public class UserNeo4j {
     @Relationship(type = "FRIENDS_WITH")
     private List<UserNeo4j> friends;
 
-    /*@Relationship(type = "LIKES")
-    private Set<PageNeo4j> likedPages;*/
+    
 }

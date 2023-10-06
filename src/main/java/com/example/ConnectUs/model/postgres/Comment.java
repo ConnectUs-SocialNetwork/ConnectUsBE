@@ -1,30 +1,27 @@
 package com.example.ConnectUs.model.postgres;
 
-import com.example.ConnectUs.enumerations.FriendRequestStatus;
 import jakarta.persistence.*;
-import lombok.*;
-
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "friend_request")
-public class FriendRequest {
+@Table(name = "comment")
+public class Comment {
     @Id
     @GeneratedValue
     private Integer id;
-
+    private String text;
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "friend_id")
-    private User friend;
-
-    @Column(name = "status")
-    private FriendRequestStatus status;
-
+    @JoinColumn(name = "post_id")
+    private Post post;
 }

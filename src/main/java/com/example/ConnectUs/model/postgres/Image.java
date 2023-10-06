@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "_post")
+@Table(name = "image")
 public class Image {
     @Id
     @GeneratedValue
@@ -23,7 +23,7 @@ public class Image {
 
     @ManyToMany
     @JoinTable(
-            name = "_image_user_tags",
+            name = "image_user_tags",
             joinColumns = @JoinColumn(name = "image_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )

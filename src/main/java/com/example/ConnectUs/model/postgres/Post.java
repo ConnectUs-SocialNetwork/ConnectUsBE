@@ -20,7 +20,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "_post")
+@Table(name = "post")
 public class Post {
     @Id
     @GeneratedValue
@@ -38,4 +38,7 @@ public class Post {
 
     @ManyToMany(mappedBy = "likedPosts")
     private List<User> likes;
+
+    @OneToMany(mappedBy = "post")
+    private List<Comment> comments;
 }

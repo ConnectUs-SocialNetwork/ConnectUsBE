@@ -55,10 +55,10 @@ public class FriendRequestService {
             friendRequest.setStatus(FriendRequestStatus.ACCEPTED);
 
             User user = userRepository.findById(friendRequest.getUser().getId()).orElseThrow();
-            UserNeo4j userNeo4j = userNeo4jRepository.findById(friendRequest.getUser().getId().longValue()).orElseThrow();
+            UserNeo4j userNeo4j = userNeo4jRepository.findUserById(friendRequest.getUser().getId());
 
             User friend = userRepository.findById(friendRequest.getFriend().getId()).orElseThrow();
-            UserNeo4j friendNeo4j = userNeo4jRepository.findById(friendRequest.getFriend().getId().longValue()).orElseThrow();
+            UserNeo4j friendNeo4j = userNeo4jRepository.findUserById(friendRequest.getFriend().getId());
 
             savePostgresFriend(user, friend);
             saveNeo4jFriend(userNeo4j, friendNeo4j);

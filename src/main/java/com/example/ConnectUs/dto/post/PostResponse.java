@@ -19,6 +19,10 @@ import java.util.List;
 @NoArgsConstructor
 public class PostResponse implements Comparable<PostResponse>{
     private Integer id;
+    private Integer userId;
+    private String firstname;
+    private String lastname;
+    private String profileImage;
     private String text;
     private String imageInBase64;
     private String dateAndTime;

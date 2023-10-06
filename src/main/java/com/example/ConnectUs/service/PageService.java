@@ -1,14 +1,17 @@
 package com.example.ConnectUs.service;
 
 import com.example.ConnectUs.dto.page.PageRequest;
+import com.example.ConnectUs.dto.page.PageResponse;
 import com.example.ConnectUs.dto.page.ViewPageResponse;
 import com.example.ConnectUs.enumerations.PageCategory;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.neo4j.PageNeo4j;
+import com.example.ConnectUs.model.neo4j.UserNeo4j;
 import com.example.ConnectUs.model.postgres.Page;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.repository.neo4j.PageNeo4jRepository;
+import com.example.ConnectUs.repository.neo4j.UserNeo4jRepository;
 import com.example.ConnectUs.repository.postgres.PageRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,12 +19,15 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PageService {
     private final PageRepository pageRepository;
     private final PageNeo4jRepository pageNeo4jRepository;
     private final UserRepository userRepository;
+    private final UserNeo4jRepository userNeo4jRepository;
 
     @Transactional(value = "chainedTransactionManager")
     public Page save(PageRequest pageRequest){
@@ -82,4 +88,28 @@ public class PageService {
         }catch(DataAccessException e){
             throw new DatabaseAccessException(e.getMessage());
         }
-    }}
+    }
+
+    public void likePage(Integer pageId, Integer userId){
+        try{
+            UserNeo4j user = userNeo4jRepository.findUserById(userId);
+            PageNeo4j page = pageNeo4jRepository.findPageById(pageId);
+
+            List<UserNeo4j> usersWhoLikedPage = page.getUsersWhoLikedPage();
+            usersWhoLikedPage.add(user);
+            page.setUsersWhoLikedPage(usersWhoLikedPage);
+
+            pageNeo4jRepository.save(page);
+        }catch (DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    public void unlikePage(Integer pageId, Integer userId){
+        try{
+            pageNeo4jRepository.unlikePage(pageId.longValue(), userId.longValue());
+        }catch (DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+}

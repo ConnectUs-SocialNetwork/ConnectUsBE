@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class PageResponse {
+    private Integer id;
     private String name;
     private String description;
     private String category;

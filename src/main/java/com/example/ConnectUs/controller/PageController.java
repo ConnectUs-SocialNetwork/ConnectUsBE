@@ -43,4 +43,25 @@ public class PageController {
             return ResponseEntity.status(500).body(null);
         }
 
-    }}
+    }
+
+    @PutMapping("/like")
+    public ResponseEntity likePage(@RequestParam("pageId") Integer pageId, @RequestParam("userId") Integer userId){
+        try{
+            pageService.likePage(pageId, userId);
+            return ResponseEntity.ok(true);
+        }catch (DatabaseAccessException e){
+            return  ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @PutMapping("/unlike")
+    public ResponseEntity unlikePage(@RequestParam("pageId") Integer pageId, @RequestParam("userId") Integer userId){
+        try{
+            pageService.unlikePage(pageId, userId);
+            return ResponseEntity.ok(true);
+        }catch (DatabaseAccessException e){
+            return  ResponseEntity.status(500).body(null);
+        }
+    }
+}

@@ -15,7 +15,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class PagePostResponse implements Comparable<PostResponse>{
+public class PagePostResponse implements Comparable<PagePostResponse>{
     private Integer postId;
     private Integer pageId;
     private String name;
@@ -27,7 +27,7 @@ public class PagePostResponse implements Comparable<PostResponse>{
     private List<UserResponse> likes;
 
     @Override
-    public int compareTo(PostResponse postResponse) {
+    public int compareTo(PagePostResponse postResponse) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime dateTime1 = LocalDateTime.parse(getDateAndTime(), formatter);
         LocalDateTime dateTime2 = LocalDateTime.parse(postResponse.getDateAndTime(), formatter);

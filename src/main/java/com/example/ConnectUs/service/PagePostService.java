@@ -15,6 +15,7 @@ import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.repository.postgres.PagePostRepository;
 import com.example.ConnectUs.repository.postgres.PageRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -114,6 +115,38 @@ public class PagePostService {
             User user = userRepository.findById(myId).orElseThrow();
             PagePostsResponse postsResponse = getPagePostsResponseFromPostsList(postList, user);
             return postsResponse;
+        }catch (DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void likePost(Integer userId, Integer postId) {
+        try{
+            User user = userRepository.findById(userId).orElseThrow();
+
+            PagePost post = postRepository.findById(postId).orElseThrow();
+
+            List<PagePost> likedPosts = user.getLikedPagePosts();
+            likedPosts.add(post);
+            user.setLikedPagePosts(likedPosts);
+            userRepository.save(user);
+        }catch (DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void unlikePost(Integer userId, Integer postId) {
+        try{
+            User user = userRepository.findById(userId).orElseThrow();
+
+            PagePost post = postRepository.findById(postId).orElseThrow();
+
+            List<PagePost> likedPosts = user.getLikedPagePosts();
+            likedPosts.remove(post);
+            user.setLikedPagePosts(likedPosts);
+            userRepository.save(user);
         }catch (DataAccessException e){
             throw new DatabaseAccessException(e.getMessage());
         }

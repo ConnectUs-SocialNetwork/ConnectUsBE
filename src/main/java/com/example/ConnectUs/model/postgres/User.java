@@ -66,9 +66,9 @@ public class User implements UserDetails {
     @JoinTable(
             name = "page_post_like",
             joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "post_id"))
+            inverseJoinColumns = @JoinColumn(name = "page_post_id"))
     @JsonIgnore
-    private List<Post> likedPagePosts;
+    private List<PagePost> likedPagePosts;
 
     @ManyToMany(mappedBy = "taggedUsers")
     private List<Image> taggedImages;

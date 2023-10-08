@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface PageRepository extends JpaRepository<Page, Integer> {
 
-    public Optional<Page> findById(Integer id);
+    Optional<Page> findById(Integer id);
 }

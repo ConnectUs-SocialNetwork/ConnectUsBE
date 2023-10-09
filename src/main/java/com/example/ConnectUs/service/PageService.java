@@ -1,8 +1,10 @@
 package com.example.ConnectUs.service;
 
+import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.page.PageRequest;
 import com.example.ConnectUs.dto.page.PageResponse;
 import com.example.ConnectUs.dto.page.ViewPageResponse;
+import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.enumerations.PageCategory;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.neo4j.PageNeo4j;
@@ -19,6 +21,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,19 +33,19 @@ public class PageService {
     private final UserNeo4jRepository userNeo4jRepository;
 
     @Transactional(value = "chainedTransactionManager")
-    public Page save(PageRequest pageRequest){
-        try{
+    public Page save(PageRequest pageRequest) {
+        try {
             User administrator = userRepository.findById(pageRequest.getAdministratorId()).orElseThrow();
             PageCategory category;
-            if(pageRequest.getCategory().equals("Travel")){
+            if (pageRequest.getCategory().equals("Travel")) {
                 category = PageCategory.TRAVEL;
-            }else if(pageRequest.getCategory().equals("Food")){
+            } else if (pageRequest.getCategory().equals("Food")) {
                 category = PageCategory.FOOD;
-            }else if(pageRequest.getCategory().equals("Fashion")){
+            } else if (pageRequest.getCategory().equals("Fashion")) {
                 category = PageCategory.FASHION;
-            }else if(pageRequest.getCategory().equals("Fitness and Wellness")){
+            } else if (pageRequest.getCategory().equals("Fitness and Wellness")) {
                 category = PageCategory.FITNESS_AND_WELLNES;
-            }else{
+            } else {
                 category = PageCategory.ENTERTAINMENT;
             }
 
@@ -64,13 +67,13 @@ public class PageService {
             pageNeo4jRepository.save(pageNeo4j);
 
             return page;
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
 
-    public ViewPageResponse getViewPageResponse(Integer pageId, Integer userId){
-        try{
+    public ViewPageResponse getViewPageResponse(Integer pageId, Integer userId) {
+        try {
             Page page = pageRepository.findById(pageId).orElseThrow();
             int numberOfLikes = pageNeo4jRepository.getNumberOfLikes(pageId.longValue());
             boolean isLikedByUser = pageNeo4jRepository.isLikedByUser(pageId.longValue(), userId.longValue());
@@ -85,13 +88,13 @@ public class PageService {
                     .build();
 
             return pageResponse;
-        }catch(DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
 
-    public void likePage(Integer pageId, Integer userId){
-        try{
+    public void likePage(Integer pageId, Integer userId) {
+        try {
             UserNeo4j user = userNeo4jRepository.findUserById(userId);
             PageNeo4j page = pageNeo4jRepository.findPageById(pageId);
 
@@ -100,15 +103,65 @@ public class PageService {
             page.setUsersWhoLikedPage(usersWhoLikedPage);
 
             pageNeo4jRepository.save(page);
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
 
-    public void unlikePage(Integer pageId, Integer userId){
-        try{
+    public void unlikePage(Integer pageId, Integer userId) {
+        try {
             pageNeo4jRepository.unlikePage(pageId.longValue(), userId.longValue());
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
+            throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    private List<UserResponse> getUserResponseListFromUserList(List<User> userList) {
+        List<UserResponse> retList = new ArrayList<>();
+
+        for (User user : userList) {
+
+            UserResponse userResponse = UserResponse.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .dateOfBirth(user.getDateOfBirth().toString())
+                    .firstname(user.getFirstname())
+                    .lastname(user.getLastname())
+                    .gender(user.getGender())
+                    .profileImage(user.getProfileImage())
+                    .build();
+
+            retList.add(userResponse);
+        }
+
+        return retList;
+    }
+
+    public List<SearchUserResponse> getLikers(Integer pageId, Integer myId) {
+        try {
+            User myUser = userRepository.findById(myId).orElseThrow();
+            List<UserNeo4j> likers = pageNeo4jRepository.getLikers(pageId);
+            List<Integer> ids = new ArrayList<>();
+            for (UserNeo4j u : likers) {
+                ids.add(u.getId().intValue());
+            }
+            List<User> userList = userRepository.findByIdIn(ids);
+
+            List<SearchUserResponse> responseList = new ArrayList<>();
+            for (User u : userList) {
+                SearchUserResponse searchUserResponse = SearchUserResponse.builder()
+                        .id(u.getId())
+                        .profileImage(u.getProfileImage())
+                        .friend(myUser.getFriends().contains(u))
+                        .email(u.getEmail())
+                        .firstname(u.getFirstname())
+                        .lastname(u.getLastname())
+                        .build();
+                responseList.add(searchUserResponse);
+            }
+            return responseList;
+
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }

@@ -27,7 +27,8 @@ public class PostResponse implements Comparable<PostResponse>{
     private String imageInBase64;
     private String dateAndTime;
     private boolean isLiked;
-    private List<UserResponse> likes;
+    private Integer numberOfLikes;
+    private Integer numberOfComments;
 
     @Override
     public int compareTo(PostResponse postResponse) {

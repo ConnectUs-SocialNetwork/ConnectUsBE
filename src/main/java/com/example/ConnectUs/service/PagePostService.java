@@ -12,6 +12,7 @@ import com.example.ConnectUs.model.postgres.Page;
 import com.example.ConnectUs.model.postgres.PagePost;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
+import com.example.ConnectUs.repository.postgres.PagePostCommentRepository;
 import com.example.ConnectUs.repository.postgres.PagePostRepository;
 import com.example.ConnectUs.repository.postgres.PageRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
@@ -33,6 +34,7 @@ public class PagePostService {
     private final PagePostRepository postRepository;
     private final PageRepository pageRepository;
     private final UserRepository userRepository;
+    private final PagePostCommentRepository pagePostCommentRepository;
 
     public PagePostResponse save(PagePostRequest pagePostRequest){
         try{
@@ -56,7 +58,8 @@ public class PagePostService {
                     .imageInBase64(savedPagePost.getImageData())
                     .text(savedPagePost.getText())
                     .dateAndTime(formattedDateTime)
-                    .likes(new ArrayList<UserResponse>())
+                    .numberOfLikes(0)
+                    .numberOfComments(0)
                     .build();
         }catch (DataAccessException e){
             throw new DatabaseAccessException(e.getMessage());
@@ -90,6 +93,7 @@ public class PagePostService {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String formattedDateTime = post.getDateAndTime().format(formatter);
             boolean isLiked = post.getLikes().contains(user);
+            int numberOfComments = pagePostCommentRepository.countAllCommentsByPostId(post.getId());
 
             PagePostResponse postResponse = PagePostResponse.builder()
                     .postId(post.getId())
@@ -99,7 +103,8 @@ public class PagePostService {
                     .text(post.getText())
                     .dateAndTime(formattedDateTime)
                     .isLiked(isLiked)
-                    .likes(getUserResponseListFromUserList(post.getLikes()))
+                    .numberOfLikes(post.getLikes().size())
+                    .numberOfComments(numberOfComments)
                     .build();
             postResponseList.add(postResponse);
         }

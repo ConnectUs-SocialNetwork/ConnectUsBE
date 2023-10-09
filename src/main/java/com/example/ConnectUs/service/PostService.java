@@ -6,6 +6,7 @@ import com.example.ConnectUs.dto.post.PostsResponse;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
+import com.example.ConnectUs.repository.postgres.CommentRepository;
 import com.example.ConnectUs.repository.postgres.PostRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
 
     @Transactional
     public PostResponse save(Post post){
@@ -48,7 +50,8 @@ public class PostService {
                 .imageInBase64(savedPost.getImageData())
                 .text(savedPost.getText())
                 .dateAndTime(formattedDateTime)
-                .likes(new ArrayList<UserResponse>())
+                .numberOfLikes(0)
+                .numberOfComments(0)
                 .build();
     }
     /*@Transactional
@@ -115,6 +118,7 @@ public class PostService {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String formattedDateTime = post.getDateAndTime().format(formatter);
             boolean isLiked = post.getLikes().contains(user);
+            int numberOfComments = commentRepository.countAllCommentsByPostId(post.getId());
 
             PostResponse postResponse = PostResponse.builder()
                     .id(post.getId())
@@ -125,7 +129,8 @@ public class PostService {
                     .text(post.getText())
                     .dateAndTime(formattedDateTime)
                     .isLiked(isLiked)
-                    .likes(getUserResponseListFromUserList(post.getLikes()))
+                    .numberOfLikes(post.getLikes().size())
+                    .numberOfComments(numberOfComments)
                     .build();
             postResponseList.add(postResponse);
         }

@@ -13,10 +13,9 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -110,6 +109,8 @@ public class UserService {
             int numberOfFriends = userNeo4jRepository.getNumberOfUserFriends(userId);
             int numberOfMutualFriends = userNeo4jRepository.getNumberOfMutualFriends(userId, myId);
 
+            String dob = formatDate(user.getDateOfBirth());
+
             return UserProfileResponse.builder()
                     .id(user.getId())
                     .friends(isFriends)
@@ -119,9 +120,34 @@ public class UserService {
                     .firstname(user.getFirstname())
                     .lastname(user.getLastname())
                     .requested(isRequested)
+                    .dateOfBirth(dob)
                     .build();
         }catch (DataAccessException e){
             throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    private String formatDate(LocalDate dateOfBirth){
+        int day = dateOfBirth.getDayOfMonth();
+        String dayWithSuffix = getDayWithSuffix(day);
+        String monthAndYear = dateOfBirth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH));
+        String formattedDate = dayWithSuffix+ " " + monthAndYear;
+        return formattedDate;
+    }
+
+    private String getDayWithSuffix(int day) {
+        if (day >= 11 && day <= 13) {
+            return day + "th";
+        }
+        switch (day % 10) {
+            case 1:
+                return day + "st";
+            case 2:
+                return day + "nd";
+            case 3:
+                return day + "rd";
+            default:
+                return day + "th";
         }
     }
 }

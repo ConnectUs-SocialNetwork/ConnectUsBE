@@ -18,4 +18,5 @@ public class UserProfileResponse {
     int numberOfMutualFriends;
     boolean friends;
     boolean requested;
+    String dateOfBirth;
 }

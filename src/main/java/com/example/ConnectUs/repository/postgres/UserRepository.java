@@ -11,8 +11,8 @@ import org.springframework.data.repository.query.Param;
 public interface UserRepository extends JpaRepository<User, Integer> {
 
     Optional<User> findByEmail(String email);
+    List<User> findByIdIn(List<Integer> userIds);
     Optional<User> findById(Integer id);
-
     @Query("SELECT u FROM User u WHERE u.firstname LIKE %?1% OR u.lastname LIKE %?1%")
     List<User> findFriendsAndNonFriendsBySearchText(@Param("searchText") String searchText, @Param("userId") Integer userId);
 

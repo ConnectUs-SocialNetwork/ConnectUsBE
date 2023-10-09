@@ -30,5 +30,6 @@ public interface PageNeo4jRepository extends Neo4jRepository<PageNeo4j, Long> {
     @Query("MATCH (p:page)-[r:LIKED_BY]->(u:user) WHERE p.id = $pageId return u.id as id, u.firstname as firstname, u.lastname as lastname, u.email as email, u.profileImage as profileImage, u.friends as friends")
     List<UserNeo4j> getLikers(@Param("pageId") Integer pageId);
 
-
+    @Query("MATCH (p:page)-[r:LIKED_BY]->(u:user) WHERE u.id = $userId return p.id as id")
+    List<Long> getLikedPagesIds(@Param("userId") Integer userId);
 }

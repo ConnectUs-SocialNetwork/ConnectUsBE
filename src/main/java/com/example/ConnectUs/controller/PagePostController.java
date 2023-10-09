@@ -59,4 +59,13 @@ public class PagePostController {
             return ResponseEntity.status(500).body(null);
         }
     }
+
+    @GetMapping("/feed")
+    public ResponseEntity<PagePostsResponse> getPagePostsForFeed(@RequestParam Integer userId){
+        try{
+            return ResponseEntity.ok(pagePostService.getPagePostsForFeed(userId));
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
+    }
 }

@@ -12,6 +12,7 @@ import com.example.ConnectUs.model.postgres.Page;
 import com.example.ConnectUs.model.postgres.PagePost;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
+import com.example.ConnectUs.repository.neo4j.PageNeo4jRepository;
 import com.example.ConnectUs.repository.postgres.PagePostCommentRepository;
 import com.example.ConnectUs.repository.postgres.PagePostRepository;
 import com.example.ConnectUs.repository.postgres.PageRepository;
@@ -27,12 +28,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PagePostService {
     private final PagePostRepository postRepository;
     private final PageRepository pageRepository;
+    private final PageNeo4jRepository pageNeo4jRepository;
     private final UserRepository userRepository;
     private final PagePostCommentRepository pagePostCommentRepository;
 
@@ -155,5 +158,23 @@ public class PagePostService {
         }catch (DataAccessException e){
             throw new DatabaseAccessException(e.getMessage());
         }
+    }
+
+    public PagePostsResponse getPagePostsForFeed(Integer userId){
+        List<Integer> integerPageIds = pageNeo4jRepository.getLikedPagesIds(userId).stream()
+                .map(Long::intValue)
+                .collect(Collectors.toList());
+
+        List<PagePostResponse> postResponseList = new ArrayList<>();
+
+        for (Integer pageId : integerPageIds) {
+            PagePostsResponse postResponse = getPagePosts(pageId, userId);
+            postResponseList.addAll(postResponse.getPosts());
+        }
+
+        PagePostsResponse postResponse = new PagePostsResponse();
+        postResponse.setPosts(postResponseList);
+
+        return postResponse;
     }
 }

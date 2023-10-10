@@ -9,9 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/api/v1/comment")
@@ -26,6 +26,14 @@ public class CommentController {
         }catch (DatabaseAccessException e){
             return ResponseEntity.status(500).body(null);
         }
+    }
 
+    @GetMapping
+    public ResponseEntity<List<CommentResponse>> getComments(@RequestParam Integer postId){
+        try{
+            return ResponseEntity.ok(commentService.getComments(postId));
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
     }
 }

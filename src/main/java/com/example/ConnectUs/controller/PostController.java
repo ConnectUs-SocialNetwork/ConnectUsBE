@@ -4,6 +4,7 @@ import com.example.ConnectUs.dto.post.LikeResponse;
 import com.example.ConnectUs.dto.post.PostRequest;
 import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
+import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.List;
 
 @Controller
 @RequestMapping("/api/v1/post")
@@ -60,6 +62,15 @@ public class PostController {
     public ResponseEntity<PostsResponse> getUserPosts(@RequestParam Integer userId, @RequestParam Integer myId){
         try{
             return ResponseEntity.ok(postService.getUserPosts(userId, myId));
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @GetMapping("/getUsersWhoLikedPost")
+    public ResponseEntity<List<SearchUserResponse>> getUsersWhoLikedPost(@RequestParam Integer postId, @RequestParam Integer myId){
+        try{
+            return ResponseEntity.ok(postService.getUsersWhoLikedPost(postId, myId));
         }catch (DatabaseAccessException e){
             return ResponseEntity.status(500).body(null);
         }

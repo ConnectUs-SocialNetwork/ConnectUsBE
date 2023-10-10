@@ -9,6 +9,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment, Integer> {
+
+    @Query("SELECT c FROM Comment c WHERE c.post.id = :postId")
+    List<Comment> findAllByPagePostId(@Param("postId") Integer postId);
     @Query("SELECT count(c) FROM Comment c WHERE c.post.id = :postId")
     int countAllCommentsByPostId(@Param("postId") Integer postId);
 }

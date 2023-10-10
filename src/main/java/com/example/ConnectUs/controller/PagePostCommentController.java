@@ -7,9 +7,9 @@ import com.example.ConnectUs.service.PagePostCommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -21,6 +21,15 @@ public class PagePostCommentController {
     public ResponseEntity<CommentResponse> save(@RequestBody CommentRequest commentRequest){
         try{
             return  ResponseEntity.ok(pagePostCommentService.save(commentRequest));
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CommentResponse>> getComments(@RequestParam Integer postId){
+        try{
+            return ResponseEntity.ok(pagePostCommentService.getComments(postId));
         }catch (DatabaseAccessException e){
             return ResponseEntity.status(500).body(null);
         }

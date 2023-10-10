@@ -3,7 +3,9 @@ package com.example.ConnectUs.service;
 import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
+import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
+import com.example.ConnectUs.model.neo4j.UserNeo4j;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.repository.postgres.CommentRepository;
@@ -174,6 +176,29 @@ public class PostService {
             User user = userRepository.findById(myId).orElseThrow();
             PostsResponse postsResponse = getPostsResponseFromPostsList(postList, user);
             return postsResponse;
+        }catch (DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    public List<SearchUserResponse> getUsersWhoLikedPost(Integer postId, Integer myId ){
+        try{
+            Post post = postRepository.findById(postId).orElseThrow();
+            User user = userRepository.findById(myId).orElseThrow();
+
+            List<SearchUserResponse> responseList = new ArrayList<>();
+            for (User u : post.getLikes()) {
+                SearchUserResponse searchUserResponse = SearchUserResponse.builder()
+                        .id(u.getId())
+                        .profileImage(u.getProfileImage())
+                        .friend(user.getFriends().contains(u))
+                        .email(u.getEmail())
+                        .firstname(u.getFirstname())
+                        .lastname(u.getLastname())
+                        .build();
+                responseList.add(searchUserResponse);
+            }
+            return responseList;
         }catch (DataAccessException e){
             throw new DatabaseAccessException(e.getMessage());
         }

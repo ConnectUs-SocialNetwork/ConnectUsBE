@@ -7,6 +7,7 @@ import com.example.ConnectUs.dto.pagePost.PagePostResponse;
 import com.example.ConnectUs.dto.pagePost.PagePostsResponse;
 import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
+import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.postgres.Page;
 import com.example.ConnectUs.model.postgres.PagePost;
@@ -176,5 +177,28 @@ public class PagePostService {
         postResponse.setPosts(postResponseList);
 
         return postResponse;
+    }
+
+    public List<SearchUserResponse> getUsersWhoLikedPost(Integer postId, Integer myId ){
+        try{
+            PagePost post = postRepository.findById(postId).orElseThrow();
+            User user = userRepository.findById(myId).orElseThrow();
+
+            List<SearchUserResponse> responseList = new ArrayList<>();
+            for (User u : post.getLikes()) {
+                SearchUserResponse searchUserResponse = SearchUserResponse.builder()
+                        .id(u.getId())
+                        .profileImage(u.getProfileImage())
+                        .friend(user.getFriends().contains(u))
+                        .email(u.getEmail())
+                        .firstname(u.getFirstname())
+                        .lastname(u.getLastname())
+                        .build();
+                responseList.add(searchUserResponse);
+            }
+            return responseList;
+        }catch (DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
+        }
     }
 }

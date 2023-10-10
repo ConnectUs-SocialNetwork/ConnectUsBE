@@ -4,6 +4,7 @@ import com.example.ConnectUs.dto.pagePost.PagePostRequest;
 import com.example.ConnectUs.dto.pagePost.PagePostResponse;
 import com.example.ConnectUs.dto.pagePost.PagePostsResponse;
 import com.example.ConnectUs.dto.post.LikeResponse;
+import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.postgres.PagePost;
 import com.example.ConnectUs.service.PagePostService;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -64,6 +66,15 @@ public class PagePostController {
     public ResponseEntity<PagePostsResponse> getPagePostsForFeed(@RequestParam Integer userId){
         try{
             return ResponseEntity.ok(pagePostService.getPagePostsForFeed(userId));
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @GetMapping("/getUsersWhoLikedPost")
+    public ResponseEntity<List<SearchUserResponse>> getUsersWhoLikedPost(@RequestParam Integer postId, @RequestParam Integer myId){
+        try{
+            return ResponseEntity.ok(pagePostService.getUsersWhoLikedPost(postId, myId));
         }catch (DatabaseAccessException e){
             return ResponseEntity.status(500).body(null);
         }

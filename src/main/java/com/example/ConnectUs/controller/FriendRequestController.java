@@ -11,13 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/api/v1/friendRequest")
+@RequestMapping("/api/v1/friend-request")
 @RequiredArgsConstructor
 public class FriendRequestController {
     private final FriendRequestService friendRequestService;
@@ -48,4 +45,15 @@ public class FriendRequestController {
             return ResponseEntity.status(500).body(null);
         }
     }
+
+    @DeleteMapping("/unsendRequest")
+    public ResponseEntity unsendRequest(@RequestBody FriendRequestDTO data){
+        try{
+            friendRequestService.unsendRequest(data);
+            return ResponseEntity.status(200).body(true);
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
 }

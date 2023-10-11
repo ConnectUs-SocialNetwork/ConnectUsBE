@@ -1,5 +1,7 @@
 package com.example.ConnectUs.service;
 
+import com.example.ConnectUs.dto.friendRequest.FriendRequestDTO;
+import com.example.ConnectUs.dto.friendRequest.ProcessFriendRequestResponse;
 import com.example.ConnectUs.dto.friendRequest.ProcessRequestDTO;
 import com.example.ConnectUs.enumerations.FriendRequestStatus;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
@@ -50,6 +52,7 @@ public class FriendRequestService {
         }
     }
 
+    @Transactional(value = "chainedTransactionManager")
     private FriendRequest processFriendship(ProcessRequestDTO processRequestDTO, FriendRequest friendRequest){
         if(processRequestDTO.isAccepted()){
             friendRequest.setStatus(FriendRequestStatus.ACCEPTED);
@@ -96,5 +99,9 @@ public class FriendRequestService {
         friendNeo4jFriends.add(userNeo4j);
         friendNeo4j.setFriends(friendNeo4jFriends);
         userNeo4jRepository.save(friendNeo4j);
+    }
+
+    public void unsendRequest(FriendRequestDTO data){
+        friendRequestRepository.deleteByUserIdAndFriendId(data.getFriendId(), data.getUserId());
     }
 }

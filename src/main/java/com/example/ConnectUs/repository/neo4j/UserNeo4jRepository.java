@@ -31,4 +31,10 @@ public interface UserNeo4jRepository extends Neo4jRepository<UserNeo4j, Long> {
             "WHERE u.id = $userId AND me.id = $myId " +
             "RETURN count(commonFriend)")
     int getNumberOfMutualFriends(@Param("userId") Integer userId, @Param("myId") Integer myId);
+
+    @Query("MATCH (u:user)-[r:FRIENDS_WITH]->(f:user) " +
+            "WHERE (u.id = $userId AND f.id = $friendId) OR " +
+            "(u.id = $friendId AND f.id = $userId) " +
+            "DELETE r")
+    void removeFriendsRelation(@Param("userId") Long userId, @Param("friendId") Long friendId);
 }

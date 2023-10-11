@@ -17,6 +17,8 @@ public class UserProfileResponse {
     int numberOfFriends;
     int numberOfMutualFriends;
     boolean friends;
-    boolean requested;
+    boolean requestSentByMe;
+    boolean heSentFriendRequest;
     String dateOfBirth;
+    Integer requestId;
 }

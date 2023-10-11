@@ -3,6 +3,7 @@ package com.example.ConnectUs.controller;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.dto.user.UserProfileResponse;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
+import com.example.ConnectUs.model.postgres.FriendRequest;
 import com.example.ConnectUs.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
@@ -50,6 +51,16 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> getUserProfile(@RequestParam Integer userId, @RequestParam Integer myId){
         try{
             return ResponseEntity.ok(userService.getUserProfileResponse(userId, myId));
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @PutMapping("/removeFriend")
+    public ResponseEntity removeFriend(@RequestParam Integer userId, @RequestParam Integer friendId){
+        try{
+            userService.removeFriend(userId, friendId);
+            return ResponseEntity.status(200).body(true);
         }catch (DatabaseAccessException e){
             return ResponseEntity.status(500).body(null);
         }

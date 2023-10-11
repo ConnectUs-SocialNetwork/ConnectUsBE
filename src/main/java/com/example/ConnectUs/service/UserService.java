@@ -4,6 +4,7 @@ import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.dto.user.UserProfileResponse;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.neo4j.UserNeo4j;
+import com.example.ConnectUs.model.postgres.FriendRequest;
 import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.repository.neo4j.UserNeo4jRepository;
 import com.example.ConnectUs.repository.postgres.FriendRequestRepository;
@@ -105,11 +106,16 @@ public class UserService {
             User myUser = userRepository.findById(myId).orElseThrow();
 
             boolean isFriends = user.getFriends().contains(myUser);
-            boolean isRequested = friendRequestRepository.hasPendingFriendRequest(myId, userId);
+            boolean iSentFriendRequest = friendRequestRepository.hasPendingFriendRequest(myId, userId);
+            boolean heSentFriendRequest = friendRequestRepository.hasPendingFriendRequest(userId, myId);
             int numberOfFriends = userNeo4jRepository.getNumberOfUserFriends(userId);
             int numberOfMutualFriends = userNeo4jRepository.getNumberOfMutualFriends(userId, myId);
-
             String dob = formatDate(user.getDateOfBirth());
+            Integer requestId = -1;
+
+            if(heSentFriendRequest){
+                requestId = friendRequestRepository.getFriendRequestByUserIdAndFriendId(user.getId(), myUser.getId()).getId();
+            }
 
             return UserProfileResponse.builder()
                     .id(user.getId())
@@ -119,8 +125,10 @@ public class UserService {
                     .numberOfMutualFriends(numberOfMutualFriends)
                     .firstname(user.getFirstname())
                     .lastname(user.getLastname())
-                    .requested(isRequested)
+                    .requestSentByMe(iSentFriendRequest)
+                    .heSentFriendRequest(heSentFriendRequest)
                     .dateOfBirth(dob)
+                    .requestId(requestId)
                     .build();
         }catch (DataAccessException e){
             throw new DatabaseAccessException(e.getMessage());
@@ -148,6 +156,52 @@ public class UserService {
                 return day + "rd";
             default:
                 return day + "th";
+        }
+    }
+
+    private void removePostgresFriend(User user, User friend){
+        //User postgres
+        List<User> userFriends = user.getFriends();
+        userFriends.remove(friend);
+        user.setFriends(userFriends);
+        userRepository.save(user);
+
+        //Friend postgres
+        List<User> friendFriends = friend.getFriends();
+        friendFriends.remove(user);
+        friend.setFriends(friendFriends);
+        userRepository.save(friend);
+    }
+
+    private void removeNeo4jFriend(UserNeo4j userNeo4j, UserNeo4j friendNeo4j){
+        //User neo4j
+        List<UserNeo4j> userNeo4jFriends = userNeo4j.getFriends();
+        userNeo4jFriends.remove(friendNeo4j);
+        userNeo4j.setFriends(userNeo4jFriends);
+        userNeo4jRepository.save(userNeo4j);
+
+        //Friend neo4j
+        List<UserNeo4j> friendNeo4jFriends = friendNeo4j.getFriends();
+        friendNeo4jFriends.remove(userNeo4j);
+        friendNeo4j.setFriends(friendNeo4jFriends);
+        userNeo4jRepository.save(friendNeo4j);
+    }
+
+    @Transactional(value = "chainedTransactionManager")
+    public void removeFriend(Integer userId, Integer friendId){
+        try{
+            friendRequestRepository.deleteFriendRequestsByUserIdAndFriendId(userId, friendId);
+
+            User user = userRepository.findById(userId).orElseThrow();
+            UserNeo4j userNeo4j = userNeo4jRepository.findUserById(userId);
+
+            User friend = userRepository.findById(friendId).orElseThrow();
+            UserNeo4j friendNeo4j = userNeo4jRepository.findUserById(friendId);
+
+            removePostgresFriend(user, friend);
+            userNeo4jRepository.removeFriendsRelation(user.getId().longValue(), friend.getId().longValue());
+        }catch (DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
         }
     }
 }

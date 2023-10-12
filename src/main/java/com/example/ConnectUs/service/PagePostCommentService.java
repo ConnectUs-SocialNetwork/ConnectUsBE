@@ -2,6 +2,7 @@ package com.example.ConnectUs.service;
 
 import com.example.ConnectUs.dto.comment.CommentRequest;
 import com.example.ConnectUs.dto.comment.CommentResponse;
+import com.example.ConnectUs.enumerations.NotificationType;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.postgres.*;
 import com.example.ConnectUs.repository.postgres.PagePostCommentRepository;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +24,7 @@ public class PagePostCommentService {
     private final PagePostCommentRepository pagePostCommentRepository;
     private final PagePostRepository postRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public CommentResponse save(CommentRequest commentRequest) {
@@ -36,6 +39,20 @@ public class PagePostCommentService {
                     .build();
 
             pagePostCommentRepository.save(comment);
+
+            if(post.getPage().getAdministrator().getId() != user.getId()){
+                notificationService.save(Notification.builder()
+                        .firstname(user.getFirstname())
+                        .lastname(user.getLastname())
+                        .user(post.getPage().getAdministrator())
+                        .avatar(user.getProfileImage())
+                        .type(NotificationType.PAGE_POST_COMMENT)
+                        .dateAndTime(LocalDateTime.now())
+                        .entityId(post.getId())
+                        .isRead(false)
+                        .text("commented the post on page " + post.getPage().getName() + ". Click on the notification to see the post.")
+                        .build());
+            }
 
             return CommentResponse.builder()
                     .id(comment.getId())
@@ -69,7 +86,7 @@ public class PagePostCommentService {
             }
 
             return commentResponses;
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }

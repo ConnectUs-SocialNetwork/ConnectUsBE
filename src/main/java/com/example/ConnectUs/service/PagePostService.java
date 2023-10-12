@@ -8,11 +8,9 @@ import com.example.ConnectUs.dto.pagePost.PagePostsResponse;
 import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
+import com.example.ConnectUs.enumerations.NotificationType;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
-import com.example.ConnectUs.model.postgres.Page;
-import com.example.ConnectUs.model.postgres.PagePost;
-import com.example.ConnectUs.model.postgres.Post;
-import com.example.ConnectUs.model.postgres.User;
+import com.example.ConnectUs.model.postgres.*;
 import com.example.ConnectUs.repository.neo4j.PageNeo4jRepository;
 import com.example.ConnectUs.repository.postgres.PagePostCommentRepository;
 import com.example.ConnectUs.repository.postgres.PagePostRepository;
@@ -39,9 +37,10 @@ public class PagePostService {
     private final PageNeo4jRepository pageNeo4jRepository;
     private final UserRepository userRepository;
     private final PagePostCommentRepository pagePostCommentRepository;
+    private final NotificationService notificationService;
 
-    public PagePostResponse save(PagePostRequest pagePostRequest){
-        try{
+    public PagePostResponse save(PagePostRequest pagePostRequest) {
+        try {
             Page page = pageRepository.findById(pagePostRequest.getPageId()).orElseThrow();
             PagePost post = PagePost.builder()
                     .text(pagePostRequest.getPostText())
@@ -65,15 +64,15 @@ public class PagePostService {
                     .numberOfLikes(0)
                     .numberOfComments(0)
                     .build();
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
 
-    private List<UserResponse> getUserResponseListFromUserList(List<User> userList){
+    private List<UserResponse> getUserResponseListFromUserList(List<User> userList) {
         List<UserResponse> retList = new ArrayList<>();
 
-        for (User user : userList){
+        for (User user : userList) {
 
             UserResponse userResponse = UserResponse.builder()
                     .id(user.getId())
@@ -90,10 +89,11 @@ public class PagePostService {
 
         return retList;
     }
-    private PagePostsResponse getPagePostsResponseFromPostsList(List<PagePost> posts, User user){
+
+    private PagePostsResponse getPagePostsResponseFromPostsList(List<PagePost> posts, User user) {
         PagePostsResponse postsResponse = new PagePostsResponse();
         List<PagePostResponse> postResponseList = new ArrayList<>();
-        for(PagePost post : posts){
+        for (PagePost post : posts) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String formattedDateTime = post.getDateAndTime().format(formatter);
             boolean isLiked = post.getLikes().contains(user);
@@ -118,20 +118,20 @@ public class PagePostService {
     }
 
     @Transactional
-    public PagePostsResponse getPagePosts(Integer pageId, Integer myId){
-        try{
+    public PagePostsResponse getPagePosts(Integer pageId, Integer myId) {
+        try {
             List<PagePost> postList = postRepository.findAllByPageId(pageId);
             User user = userRepository.findById(myId).orElseThrow();
             PagePostsResponse postsResponse = getPagePostsResponseFromPostsList(postList, user);
             return postsResponse;
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
 
     @Transactional
     public void likePost(Integer userId, Integer postId) {
-        try{
+        try {
             User user = userRepository.findById(userId).orElseThrow();
 
             PagePost post = postRepository.findById(postId).orElseThrow();
@@ -140,14 +140,28 @@ public class PagePostService {
             likedPosts.add(post);
             user.setLikedPagePosts(likedPosts);
             userRepository.save(user);
-        }catch (DataAccessException e){
+
+            if(post.getPage().getAdministrator().getId() != user.getId()){
+                notificationService.save(Notification.builder()
+                        .firstname(user.getFirstname())
+                        .lastname(user.getLastname())
+                        .user(post.getPage().getAdministrator())
+                        .avatar(user.getProfileImage())
+                        .type(NotificationType.PAGE_POST_LIKE)
+                        .dateAndTime(LocalDateTime.now())
+                        .entityId(post.getId())
+                        .isRead(false)
+                        .text("liked the post on page " + post.getPage().getName() + ". Click on the notification to see the post.")
+                        .build());
+            }
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
 
     @Transactional
     public void unlikePost(Integer userId, Integer postId) {
-        try{
+        try {
             User user = userRepository.findById(userId).orElseThrow();
 
             PagePost post = postRepository.findById(postId).orElseThrow();
@@ -156,12 +170,12 @@ public class PagePostService {
             likedPosts.remove(post);
             user.setLikedPagePosts(likedPosts);
             userRepository.save(user);
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
 
-    public PagePostsResponse getPagePostsForFeed(Integer userId){
+    public PagePostsResponse getPagePostsForFeed(Integer userId) {
         List<Integer> integerPageIds = pageNeo4jRepository.getLikedPagesIds(userId).stream()
                 .map(Long::intValue)
                 .collect(Collectors.toList());
@@ -179,8 +193,8 @@ public class PagePostService {
         return postResponse;
     }
 
-    public List<SearchUserResponse> getUsersWhoLikedPost(Integer postId, Integer myId ){
-        try{
+    public List<SearchUserResponse> getUsersWhoLikedPost(Integer postId, Integer myId) {
+        try {
             PagePost post = postRepository.findById(postId).orElseThrow();
             User user = userRepository.findById(myId).orElseThrow();
 
@@ -197,8 +211,32 @@ public class PagePostService {
                 responseList.add(searchUserResponse);
             }
             return responseList;
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
+    }
+
+    public PagePostResponse getPost(Integer postId, Integer myId) {
+        PagePost post = postRepository.findById(postId).orElseThrow();
+        User user = userRepository.findById(myId).orElseThrow();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedDateTime = post.getDateAndTime().format(formatter);
+        boolean isLiked = post.getLikes().contains(user);
+        int numberOfComments = pagePostCommentRepository.countAllCommentsByPostId(post.getId());
+
+        PagePostResponse postResponse = PagePostResponse.builder()
+                .postId(post.getId())
+                .pageId(post.getPage().getId())
+                .name(post.getPage().getName())
+                .imageInBase64(post.getImageData())
+                .text(post.getText())
+                .dateAndTime(formattedDateTime)
+                .isLiked(isLiked)
+                .numberOfLikes(post.getLikes().size())
+                .numberOfComments(numberOfComments)
+                .build();
+
+        return postResponse;
     }
 }

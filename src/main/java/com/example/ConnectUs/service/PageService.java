@@ -5,10 +5,12 @@ import com.example.ConnectUs.dto.page.PageRequest;
 import com.example.ConnectUs.dto.page.PageResponse;
 import com.example.ConnectUs.dto.page.ViewPageResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
+import com.example.ConnectUs.enumerations.NotificationType;
 import com.example.ConnectUs.enumerations.PageCategory;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.neo4j.PageNeo4j;
 import com.example.ConnectUs.model.neo4j.UserNeo4j;
+import com.example.ConnectUs.model.postgres.Notification;
 import com.example.ConnectUs.model.postgres.Page;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
@@ -21,6 +23,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +34,7 @@ public class PageService {
     private final PageNeo4jRepository pageNeo4jRepository;
     private final UserRepository userRepository;
     private final UserNeo4jRepository userNeo4jRepository;
+    private final NotificationService notificationService;
 
     @Transactional(value = "chainedTransactionManager")
     public Page save(PageRequest pageRequest) {
@@ -97,12 +101,28 @@ public class PageService {
         try {
             UserNeo4j user = userNeo4jRepository.findUserById(userId);
             PageNeo4j page = pageNeo4jRepository.findPageById(pageId);
+            Page postgresPage = pageRepository.findById(pageId).orElseThrow();
+            User postgresUser = userRepository.findById(postgresPage.getAdministrator().getId()).orElseThrow();
 
             List<UserNeo4j> usersWhoLikedPage = page.getUsersWhoLikedPage();
             usersWhoLikedPage.add(user);
             page.setUsersWhoLikedPage(usersWhoLikedPage);
 
             pageNeo4jRepository.save(page);
+
+            if(postgresPage.getAdministrator().getId() != postgresUser.getId()){
+                notificationService.save(Notification.builder()
+                        .firstname(user.getFirstname())
+                        .lastname(user.getLastname())
+                        .user(postgresUser)
+                        .avatar(user.getProfileImage())
+                        .type(NotificationType.PAGE_LIKE)
+                        .dateAndTime(LocalDateTime.now())
+                        .entityId(page.getId().intValue())
+                        .isRead(false)
+                        .text("liked your page. Click on the notification to see the page.")
+                        .build());
+            }
         } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }

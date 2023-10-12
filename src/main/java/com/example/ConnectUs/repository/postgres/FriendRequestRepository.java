@@ -14,9 +14,6 @@ import java.util.Optional;
 public interface FriendRequestRepository extends JpaRepository<FriendRequest, Integer> {
     Optional<FriendRequest> findById(Integer id);
 
-    @Query("SELECT fr FROM FriendRequest fr WHERE fr.user.id = :userId AND fr.friend.id = :friendId")
-    FriendRequest getFriendRequestByUserIdAndFriendId(@Param("userId") Integer userId, @Param("friendId") Integer friendId);
-
     @Query("SELECT COUNT(fr) > 0 FROM FriendRequest fr " +
             "WHERE fr.user.id = :myId " +
             "AND fr.friend.id = :userId " +
@@ -29,6 +26,11 @@ public interface FriendRequestRepository extends JpaRepository<FriendRequest, In
             "(fr.user.id = :friendId AND fr.friend.id = :userId)")
     @Transactional
     void deleteByUserIdAndFriendId(@Param("userId") Integer userId, @Param("friendId") Integer friendId);
+
+    @Query("SELECT fr FROM FriendRequest fr " +
+            "WHERE (fr.user.id = :userId AND fr.friend.id = :friendId AND fr.status = 0) OR " +
+            "(fr.user.id = :friendId AND fr.friend.id = :userId AND fr.status = 0)")
+    FriendRequest getPendingFriendRequestByUserIdAndFriendId(@Param("userId") Integer userId, @Param("friendId") Integer friendId);
 
     @Modifying
     @Query("DELETE FROM FriendRequest fr " +

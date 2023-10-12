@@ -75,4 +75,13 @@ public class PostController {
             return ResponseEntity.status(500).body(null);
         }
     }
+
+    @GetMapping("/getPost")
+    public ResponseEntity<PostResponse> getPost(@RequestParam Integer postId, @RequestParam Integer myId){
+        try{
+            return ResponseEntity.ok(postService.getPost(postId, myId));
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
+    }
 }

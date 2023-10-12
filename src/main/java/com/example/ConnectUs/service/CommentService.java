@@ -2,11 +2,9 @@ package com.example.ConnectUs.service;
 
 import com.example.ConnectUs.dto.comment.CommentRequest;
 import com.example.ConnectUs.dto.comment.CommentResponse;
+import com.example.ConnectUs.enumerations.NotificationType;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
-import com.example.ConnectUs.model.postgres.Comment;
-import com.example.ConnectUs.model.postgres.PagePostComment;
-import com.example.ConnectUs.model.postgres.Post;
-import com.example.ConnectUs.model.postgres.User;
+import com.example.ConnectUs.model.postgres.*;
 import com.example.ConnectUs.repository.postgres.CommentRepository;
 import com.example.ConnectUs.repository.postgres.PostRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
@@ -14,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,9 +22,10 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final NotificationService notificationService;
 
-    public CommentResponse save(CommentRequest commentRequest){
-        try{
+    public CommentResponse save(CommentRequest commentRequest) {
+        try {
             User user = userRepository.findById(commentRequest.getUserId()).orElseThrow();
             Post post = postRepository.findById(commentRequest.getPostId()).orElseThrow();
 
@@ -37,6 +37,20 @@ public class CommentService {
 
             commentRepository.save(comment);
 
+            if(post.getUser().getId() != user.getId()){
+                notificationService.save(Notification.builder()
+                        .firstname(user.getFirstname())
+                        .lastname(user.getLastname())
+                        .user(post.getUser())
+                        .avatar(user.getProfileImage())
+                        .type(NotificationType.COMMENT)
+                        .dateAndTime(LocalDateTime.now())
+                        .entityId(post.getId())
+                        .isRead(false)
+                        .text("comment your post. Click on the notification to see the post.")
+                        .build());
+            }
+
             return CommentResponse.builder()
                     .id(comment.getId())
                     .firstname(user.getFirstname())
@@ -46,7 +60,7 @@ public class CommentService {
                     .text(comment.getText())
                     .userId(user.getId())
                     .build();
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
@@ -69,7 +83,7 @@ public class CommentService {
             }
 
             return commentResponses;
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }

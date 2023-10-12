@@ -114,7 +114,7 @@ public class UserService {
             Integer requestId = -1;
 
             if(heSentFriendRequest){
-                requestId = friendRequestRepository.getFriendRequestByUserIdAndFriendId(user.getId(), myUser.getId()).getId();
+                requestId = friendRequestRepository.getPendingFriendRequestByUserIdAndFriendId(user.getId(), myUser.getId()).getId();
             }
 
             return UserProfileResponse.builder()

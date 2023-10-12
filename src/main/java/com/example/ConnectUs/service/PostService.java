@@ -4,8 +4,10 @@ import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
+import com.example.ConnectUs.enumerations.NotificationType;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.neo4j.UserNeo4j;
+import com.example.ConnectUs.model.postgres.Notification;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.repository.postgres.CommentRepository;
@@ -26,6 +28,7 @@ import org.springframework.util.StreamUtils;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,9 +39,10 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
+    private final NotificationService notificationService;
 
     @Transactional
-    public PostResponse save(Post post){
+    public PostResponse save(Post post) {
         Post savedPost = postRepository.save(post);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedDateTime = savedPost.getDateAndTime().format(formatter);
@@ -56,6 +60,7 @@ public class PostService {
                 .numberOfComments(0)
                 .build();
     }
+
     /*@Transactional
     public PostResponse getById(Integer id) {
         Post post = postRepository.getById(id);
@@ -82,7 +87,7 @@ public class PostService {
 
     }*/
     @Transactional
-    public PostsResponse getPostsForFeed(Integer id){
+    public PostsResponse getPostsForFeed(Integer id) {
         Optional<User> user = userRepository.findById(id);
 
         List<Post> posts = postRepository.findAllByUserId(id);
@@ -92,10 +97,10 @@ public class PostService {
         return postsResponse;
     }
 
-    private List<UserResponse> getUserResponseListFromUserList(List<User> userList){
+    private List<UserResponse> getUserResponseListFromUserList(List<User> userList) {
         List<UserResponse> retList = new ArrayList<>();
 
-        for (User user : userList){
+        for (User user : userList) {
 
             UserResponse userResponse = UserResponse.builder()
                     .id(user.getId())
@@ -113,10 +118,10 @@ public class PostService {
         return retList;
     }
 
-    private PostsResponse getPostsResponseFromPostsList(List<Post> posts, User user){
+    private PostsResponse getPostsResponseFromPostsList(List<Post> posts, User user) {
         PostsResponse postsResponse = new PostsResponse();
         List<PostResponse> postResponseList = new ArrayList<>();
-        for(Post post : posts){
+        for (Post post : posts) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String formattedDateTime = post.getDateAndTime().format(formatter);
             boolean isLiked = post.getLikes().contains(user);
@@ -153,6 +158,20 @@ public class PostService {
         likedPosts.add(post);
         user.setLikedPosts(likedPosts);
         userRepository.save(user);
+
+        if(post.getUser().getId() != user.getId()){
+            notificationService.save(Notification.builder()
+                    .firstname(user.getFirstname())
+                    .lastname(user.getLastname())
+                    .user(post.getUser())
+                    .avatar(user.getProfileImage())
+                    .type(NotificationType.LIKE)
+                    .dateAndTime(LocalDateTime.now())
+                    .entityId(post.getId())
+                    .isRead(false)
+                    .text("liked your post. Click on the notification to see the post.")
+                    .build());
+        }
     }
 
     @Transactional
@@ -170,19 +189,19 @@ public class PostService {
     }
 
     @Transactional
-    public PostsResponse getUserPosts(Integer userId, Integer myId){
-        try{
+    public PostsResponse getUserPosts(Integer userId, Integer myId) {
+        try {
             List<Post> postList = postRepository.findAllByUserId(userId);
             User user = userRepository.findById(myId).orElseThrow();
             PostsResponse postsResponse = getPostsResponseFromPostsList(postList, user);
             return postsResponse;
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
 
-    public List<SearchUserResponse> getUsersWhoLikedPost(Integer postId, Integer myId ){
-        try{
+    public List<SearchUserResponse> getUsersWhoLikedPost(Integer postId, Integer myId) {
+        try {
             Post post = postRepository.findById(postId).orElseThrow();
             User user = userRepository.findById(myId).orElseThrow();
 
@@ -199,8 +218,33 @@ public class PostService {
                 responseList.add(searchUserResponse);
             }
             return responseList;
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
+    }
+
+    public PostResponse getPost(Integer postId, Integer myId) {
+        Post post = postRepository.findById(postId).orElseThrow();
+        User user = userRepository.findById(myId).orElseThrow();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedDateTime = post.getDateAndTime().format(formatter);
+        boolean isLiked = post.getLikes().contains(user);
+        int numberOfComments = commentRepository.countAllCommentsByPostId(post.getId());
+
+        PostResponse postResponse = PostResponse.builder()
+                .id(post.getId())
+                .userId(post.getUser().getId())
+                .firstname(post.getUser().getFirstname())
+                .lastname(post.getUser().getLastname())
+                .imageInBase64(post.getImageData())
+                .text(post.getText())
+                .dateAndTime(formattedDateTime)
+                .isLiked(isLiked)
+                .numberOfLikes(post.getLikes().size())
+                .numberOfComments(numberOfComments)
+                .build();
+
+        return postResponse;
     }
 }

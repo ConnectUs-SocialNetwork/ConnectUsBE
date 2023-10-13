@@ -13,4 +13,6 @@ public class SearchUserResponse {
     private String email;
     private String profileImage;
     private boolean friend;
+    private Integer numberOfFriends;
+    private Integer numberOfMutualFriends;
 }

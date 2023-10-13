@@ -31,19 +31,23 @@ public class UserService {
 
     public List<SearchUserResponse> searchUsers(Integer userId, String searchText) {
         try {
-            UserNeo4j user = userNeo4jRepository.findUserById(userId);
+            List<UserNeo4j> userFriends = userNeo4jRepository.findUserFriends(userId.longValue());
             List<UserNeo4j> userList = userNeo4jRepository.findUsersBySearchText(searchText);
-            userList.sort(Comparator.comparing(u -> !user.getFriends().contains(u)));
+            userList.sort(Comparator.comparing(u -> !userFriends.contains(u)));
             List<SearchUserResponse> responseList = new ArrayList<>();
             for (UserNeo4j u : userList) {
                 SearchUserResponse searchUserResponse = SearchUserResponse.builder()
                         .id(u.getId().intValue())
                         .profileImage(u.getProfileImage())
-                        .friend(user.getFriends().contains(u))
+                        .friend(userFriends.contains(u))
                         .email(u.getEmail())
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
                         .build();
+                if(!searchUserResponse.isFriend()){
+                    searchUserResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
+                    searchUserResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), userId.intValue()));
+                }
                 responseList.add(searchUserResponse);
             }
             return responseList;

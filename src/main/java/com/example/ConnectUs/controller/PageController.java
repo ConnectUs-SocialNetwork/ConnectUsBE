@@ -3,6 +3,7 @@ package com.example.ConnectUs.controller;
 import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.page.PageRequest;
 import com.example.ConnectUs.dto.page.PageResponse;
+import com.example.ConnectUs.dto.page.SearchPageResponse;
 import com.example.ConnectUs.dto.page.ViewPageResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
@@ -75,6 +76,15 @@ public class PageController {
             return ResponseEntity.ok(pageService.getLikers(pageId, userId));
         }catch (DatabaseAccessException e){
             return ResponseEntity.status(500).body(new ArrayList<>());
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<SearchPageResponse>> searchPages(@RequestParam String searchText, @RequestParam Integer userId){
+        try{
+            return ResponseEntity.ok(pageService.searchPages(searchText, userId));
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
         }
     }
 }

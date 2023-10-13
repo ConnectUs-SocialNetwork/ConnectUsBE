@@ -14,6 +14,9 @@ public interface UserNeo4jRepository extends Neo4jRepository<UserNeo4j, Long> {
             "WHERE u.id = $userId AND me.id = $myId " +
             "RETURN commonFriend")
     List<UserNeo4j> findMutualFriends(@Param("userId") Integer userId, @Param("myId") Integer myId);
+
+    @Query("MATCH (user:user)-[:FRIENDS_WITH]->(friend:user) WHERE user.id = $userId RETURN friend")
+    List<UserNeo4j> findUserFriends(@Param("userId") Long userId);
     @Query("MATCH (u:user)" +
             "WHERE any(word IN split($searchText, \" \") WHERE toLower(u.firstname) CONTAINS toLower(word) OR toLower(u.lastname) CONTAINS toLower(word))" +
             "RETURN u")

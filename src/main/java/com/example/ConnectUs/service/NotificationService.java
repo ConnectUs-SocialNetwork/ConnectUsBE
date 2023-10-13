@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -52,6 +53,7 @@ public class NotificationService {
                     .build());
         }
 
+        Collections.sort(notificationResponses, Collections.reverseOrder());
         return notificationResponses;
     }
 
@@ -76,6 +78,7 @@ public class NotificationService {
                     .build());
         }
 
+        Collections.sort(notificationResponses, Collections.reverseOrder());
         return notificationResponses;
     }
 }

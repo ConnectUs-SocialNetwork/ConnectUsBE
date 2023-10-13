@@ -3,6 +3,7 @@ package com.example.ConnectUs.service;
 import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.page.PageRequest;
 import com.example.ConnectUs.dto.page.PageResponse;
+import com.example.ConnectUs.dto.page.SearchPageResponse;
 import com.example.ConnectUs.dto.page.ViewPageResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.enumerations.NotificationType;
@@ -110,7 +111,7 @@ public class PageService {
 
             pageNeo4jRepository.save(page);
 
-            if(postgresPage.getAdministrator().getId() != postgresUser.getId()){
+            if (postgresPage.getAdministrator().getId() != user.getId().intValue()) {
                 notificationService.save(Notification.builder()
                         .firstname(user.getFirstname())
                         .lastname(user.getLastname())
@@ -184,5 +185,52 @@ public class PageService {
         } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
+    }
+
+    @Transactional
+    public List<SearchPageResponse> searchPages(String searchText, Integer userId) {
+        try{
+            List<Page> pages = pageRepository.findPagesBySearchText(searchText);
+            List<SearchPageResponse> searchUserResponses = new ArrayList<>();
+
+            for (Page page : pages) {
+                Integer numberOfLikes = pageNeo4jRepository.getNumberOfLikes(page.getId());
+                boolean liked = pageNeo4jRepository.isLikedByUser(page.getId().longValue(), userId.longValue());
+
+                SearchPageResponse searchPageResponse = SearchPageResponse.builder()
+                        .id(page.getId())
+                        .administratorId(page.getAdministrator().getId())
+                        .avatar(page.getAvatar())
+                        .category(transformCategoryString(page.getCategory().toString()))
+                        .description(page.getDescription())
+                        .liked(liked)
+                        .numberOfLikes(numberOfLikes)
+                        .name(page.getName())
+                        .build();
+                searchUserResponses.add(searchPageResponse);
+            }
+
+            return searchUserResponses;
+        }catch (DataAccessException e){
+            throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    public String transformCategoryString(String category) {
+        String[] parts = category.split("_");
+
+        StringBuilder transformedCategory = new StringBuilder();
+
+        for (String part : parts) {
+            String firstLetter = part.substring(0, 1).toUpperCase();
+            String restOfWord = part.substring(1).toLowerCase();
+
+            if (transformedCategory.length() > 0) {
+                transformedCategory.append(" ");
+            }
+            transformedCategory.append(firstLetter).append(restOfWord);
+        }
+
+        return transformedCategory.toString();
     }
 }

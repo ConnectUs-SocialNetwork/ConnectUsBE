@@ -88,13 +88,26 @@ public class PostService {
     }*/
     @Transactional
     public PostsResponse getPostsForFeed(Integer id) {
-        Optional<User> user = userRepository.findById(id);
+        User user = userRepository.findById(id).orElseThrow();
+        List<User> userFriends = user.getFriends();
 
         List<Post> posts = postRepository.findAllByUserId(id);
+        posts.addAll(getPostsFromUserFriends(userFriends));
 
-        PostsResponse postsResponse = getPostsResponseFromPostsList(posts, user.get());
+        PostsResponse postsResponse = getPostsResponseFromPostsList(posts, user);
 
         return postsResponse;
+    }
+
+    private List<Post> getPostsFromUserFriends(List<User> friends){
+        List<Post> posts = new ArrayList<>();
+
+        for(User u : friends){
+            List<Post> friendPostList = postRepository.findAllByUserId(u.getId());
+            posts.addAll(friendPostList);
+        }
+
+        return posts;
     }
 
     private List<UserResponse> getUserResponseListFromUserList(List<User> userList) {

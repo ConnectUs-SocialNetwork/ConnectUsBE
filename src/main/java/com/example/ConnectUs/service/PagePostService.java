@@ -12,6 +12,7 @@ import com.example.ConnectUs.enumerations.NotificationType;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.postgres.*;
 import com.example.ConnectUs.repository.neo4j.PageNeo4jRepository;
+import com.example.ConnectUs.repository.neo4j.UserNeo4jRepository;
 import com.example.ConnectUs.repository.postgres.PagePostCommentRepository;
 import com.example.ConnectUs.repository.postgres.PagePostRepository;
 import com.example.ConnectUs.repository.postgres.PageRepository;
@@ -38,6 +39,7 @@ public class PagePostService {
     private final UserRepository userRepository;
     private final PagePostCommentRepository pagePostCommentRepository;
     private final NotificationService notificationService;
+    private final UserNeo4jRepository userNeo4jRepository;
 
     public PagePostResponse save(PagePostRequest pagePostRequest) {
         try {
@@ -109,6 +111,7 @@ public class PagePostService {
                     .isLiked(isLiked)
                     .numberOfLikes(post.getLikes().size())
                     .numberOfComments(numberOfComments)
+                    .profileImage(post.getPage().getAvatar())
                     .build();
             postResponseList.add(postResponse);
         }
@@ -120,9 +123,11 @@ public class PagePostService {
     @Transactional
     public PagePostsResponse getPagePosts(Integer pageId, Integer myId) {
         try {
+            Page page = pageRepository.findById(pageId).orElseThrow();
             List<PagePost> postList = postRepository.findAllByPageId(pageId);
             User user = userRepository.findById(myId).orElseThrow();
             PagePostsResponse postsResponse = getPagePostsResponseFromPostsList(postList, user);
+            postsResponse.setAvatar(page.getAvatar());
             return postsResponse;
         } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
@@ -208,6 +213,10 @@ public class PagePostService {
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
                         .build();
+                if(!searchUserResponse.isFriend()){
+                    searchUserResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
+                    searchUserResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), myId.intValue()));
+                }
                 responseList.add(searchUserResponse);
             }
             return responseList;

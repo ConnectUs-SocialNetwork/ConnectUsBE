@@ -10,6 +10,7 @@ import com.example.ConnectUs.model.neo4j.UserNeo4j;
 import com.example.ConnectUs.model.postgres.Notification;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
+import com.example.ConnectUs.repository.neo4j.UserNeo4jRepository;
 import com.example.ConnectUs.repository.postgres.CommentRepository;
 import com.example.ConnectUs.repository.postgres.PostRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
@@ -40,6 +41,7 @@ public class PostService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final NotificationService notificationService;
+    private final UserNeo4jRepository userNeo4jRepository;
 
     @Transactional
     public PostResponse save(Post post) {
@@ -151,6 +153,7 @@ public class PostService {
                     .isLiked(isLiked)
                     .numberOfLikes(post.getLikes().size())
                     .numberOfComments(numberOfComments)
+                    .profileImage(user.getProfileImage())
                     .build();
             postResponseList.add(postResponse);
         }
@@ -228,6 +231,10 @@ public class PostService {
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
                         .build();
+                if(!searchUserResponse.isFriend()){
+                    searchUserResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
+                    searchUserResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), myId.intValue()));
+                }
                 responseList.add(searchUserResponse);
             }
             return responseList;

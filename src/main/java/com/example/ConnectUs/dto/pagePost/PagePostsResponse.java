@@ -12,5 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PagePostsResponse {
-    List<PagePostResponse> posts;
+    private List<PagePostResponse> posts;
+    private String avatar;
 }

@@ -1,7 +1,10 @@
 package com.example.ConnectUs.service;
 
+import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
+import com.example.ConnectUs.dto.user.UpdateUserRequest;
 import com.example.ConnectUs.dto.user.UserProfileResponse;
+import com.example.ConnectUs.enumerations.Gender;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.neo4j.UserNeo4j;
 import com.example.ConnectUs.model.postgres.FriendRequest;
@@ -17,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -163,6 +168,26 @@ public class UserService {
         }
     }
 
+    public static LocalDate parseDate(String dateString) {
+        // Definirajte obrazac za parsiranje datuma iz stringa
+        Pattern pattern = Pattern.compile("(\\d+)\\s+([A-Za-z]+)\\s+(\\d+)");
+        Matcher matcher = pattern.matcher(dateString);
+
+        if (matcher.matches()) {
+            // Dobijte dan, mjesec i godinu iz podudaranja
+            int day = Integer.parseInt(matcher.group(1));
+            String month = matcher.group(2);
+            int year = Integer.parseInt(matcher.group(3));
+
+            // Pretvorite string mjeseca u datumski objekt
+            LocalDate date = LocalDate.parse(month + " " + day + " " + year, DateTimeFormatter.ofPattern("MMMM d yyyy", Locale.ENGLISH));
+            return date;
+        } else {
+            // Ako parsiranje nije uspjelo, možete rukovati greškom ili vratiti null
+            return null;
+        }
+    }
+
     private void removePostgresFriend(User user, User friend){
         //User postgres
         List<User> userFriends = user.getFriends();
@@ -207,5 +232,36 @@ public class UserService {
         }catch (DataAccessException e){
             throw new DatabaseAccessException(e.getMessage());
         }
+    }
+
+    @Transactional(value = "chainedTransactionManager")
+    public UserResponse updateUser(UpdateUserRequest updateUserRequest){
+        User user = userRepository.findById(updateUserRequest.getId()).orElseThrow();
+        user.setEmail(updateUserRequest.getEmail());
+        user.setDateOfBirth(LocalDate.parse(updateUserRequest.getDateOfBirth()));
+        user.setGender(Gender.valueOf(updateUserRequest.getGender()));
+        user.setFirstname(updateUserRequest.getFirstname());
+        user.setLastname(updateUserRequest.getLastname());
+        user.setProfileImage(updateUserRequest.getProfileImage());
+
+        userRepository.save(user);
+
+        UserNeo4j userNeo4j = userNeo4jRepository.findUserById(updateUserRequest.getId());
+        userNeo4j.setEmail(updateUserRequest.getEmail());
+        userNeo4j.setFirstname(updateUserRequest.getFirstname());
+        userNeo4j.setLastname(updateUserRequest.getLastname());
+        userNeo4j.setProfileImage(updateUserRequest.getProfileImage());
+
+        userNeo4jRepository.save(userNeo4j);
+
+        return UserResponse.builder()
+                .profileImage(user.getProfileImage())
+                .id(user.getId())
+                .gender(user.getGender())
+                .dateOfBirth(user.getDateOfBirth().toString())
+                .email(user.getEmail())
+                .firstname(user.getFirstname())
+                .lastname(user.getLastname())
+                .build();
     }
 }

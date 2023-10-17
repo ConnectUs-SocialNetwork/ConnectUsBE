@@ -16,7 +16,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -46,6 +45,9 @@ public class User implements UserDetails {
 
     @OneToMany(mappedBy = "user")
     private List<Comment> comments;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Location location;
 
     @ManyToMany
     @JoinTable(

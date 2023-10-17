@@ -1,10 +1,7 @@
 package com.example.ConnectUs.service;
 
 import com.example.ConnectUs.dto.authentication.UserResponse;
-import com.example.ConnectUs.dto.page.PageRequest;
-import com.example.ConnectUs.dto.page.PageResponse;
-import com.example.ConnectUs.dto.page.SearchPageResponse;
-import com.example.ConnectUs.dto.page.ViewPageResponse;
+import com.example.ConnectUs.dto.page.*;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.enumerations.NotificationType;
 import com.example.ConnectUs.enumerations.PageCategory;
@@ -90,6 +87,7 @@ public class PageService {
                     .name(page.getName())
                     .numberOfLikes(numberOfLikes)
                     .liked(isLikedByUser)
+                    .avatar(page.getAvatar())
                     .build();
 
             return pageResponse;
@@ -232,5 +230,51 @@ public class PageService {
         }
 
         return transformedCategory.toString();
+    }
+
+    @Transactional(value = "chainedTransactionManager")
+    public PageResponse updatePage(UpdatePageRequest updatePageRequest){
+        Page page = pageRepository.findById(updatePageRequest.getId()).orElseThrow();
+        PageNeo4j pageNeo4j = pageNeo4jRepository.findPageById(updatePageRequest.getId());
+        PageResponse pageResponse = new PageResponse();
+        if(updatePageRequest.getCategory() == null){
+            page.setAvatar(updatePageRequest.getAvatar());
+            pageRepository.save(page);
+        }else{
+            page.setName(updatePageRequest.getName());
+            PageCategory category;
+            if (updatePageRequest.getCategory().equals("Travel")) {
+                category = PageCategory.TRAVEL;
+            } else if (updatePageRequest.getCategory().equals("Food")) {
+                category = PageCategory.FOOD;
+            } else if (updatePageRequest.getCategory().equals("Fashion")) {
+                category = PageCategory.FASHION;
+            } else if (updatePageRequest.getCategory().equals("Fitness and Wellness")) {
+                category = PageCategory.FITNESS_AND_WELLNES;
+            } else {
+                category = PageCategory.ENTERTAINMENT;
+            }
+            page.setCategory(category);
+            page.setDescription(updatePageRequest.getDescription());
+            pageNeo4j.setCategory(category);
+            pageRepository.save(page);
+            pageNeo4jRepository.save(pageNeo4j);
+        }
+        pageResponse.setId(page.getId());
+        pageResponse.setCategory(page.getCategory().toString());
+        pageResponse.setName(page.getName());
+        pageResponse.setDescription(page.getDescription());
+        pageResponse.setAdministratorId(page.getAdministrator().getId());
+        return pageResponse;
+    }
+
+    public PageResponse getPage(Integer pageId){
+        Page page = pageRepository.findById(pageId).orElseThrow();
+        return PageResponse.builder()
+                .name(page.getName())
+                .description(page.getDescription())
+                .category(transformCategoryString(page.getCategory().toString()))
+                .administratorId(page.getAdministrator().getId())
+                .build();
     }
 }

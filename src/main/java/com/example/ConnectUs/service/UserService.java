@@ -3,6 +3,7 @@ package com.example.ConnectUs.service;
 import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.dto.user.UpdateUserRequest;
+import com.example.ConnectUs.dto.user.UpdateUserResponse;
 import com.example.ConnectUs.dto.user.UserProfileResponse;
 import com.example.ConnectUs.enumerations.Gender;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
@@ -34,6 +35,10 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    public User findById(Integer userId) {
+        return userRepository.findById(userId).orElseThrow();
+    }
+
     public List<SearchUserResponse> searchUsers(Integer userId, String searchText) {
         try {
             List<UserNeo4j> userFriends = userNeo4jRepository.findUserFriends(userId.longValue());
@@ -49,7 +54,7 @@ public class UserService {
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
                         .build();
-                if(!searchUserResponse.isFriend()){
+                if (!searchUserResponse.isFriend()) {
                     searchUserResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
                     searchUserResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), userId.intValue()));
                 }
@@ -110,7 +115,7 @@ public class UserService {
     }
 
     public UserProfileResponse getUserProfileResponse(Integer userId, Integer myId) {
-        try{
+        try {
             User user = userRepository.findById(userId).orElseThrow();
             User myUser = userRepository.findById(myId).orElseThrow();
 
@@ -122,7 +127,7 @@ public class UserService {
             String dob = formatDate(user.getDateOfBirth());
             Integer requestId = -1;
 
-            if(heSentFriendRequest){
+            if (heSentFriendRequest) {
                 requestId = friendRequestRepository.getPendingFriendRequestByUserIdAndFriendId(user.getId(), myUser.getId()).getId();
             }
 
@@ -139,16 +144,16 @@ public class UserService {
                     .dateOfBirth(dob)
                     .requestId(requestId)
                     .build();
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
 
-    private String formatDate(LocalDate dateOfBirth){
+    public String formatDate(LocalDate dateOfBirth) {
         int day = dateOfBirth.getDayOfMonth();
         String dayWithSuffix = getDayWithSuffix(day);
         String monthAndYear = dateOfBirth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH));
-        String formattedDate = dayWithSuffix+ " " + monthAndYear;
+        String formattedDate = dayWithSuffix + " " + monthAndYear;
         return formattedDate;
     }
 
@@ -188,7 +193,7 @@ public class UserService {
         }
     }
 
-    private void removePostgresFriend(User user, User friend){
+    private void removePostgresFriend(User user, User friend) {
         //User postgres
         List<User> userFriends = user.getFriends();
         userFriends.remove(friend);
@@ -202,7 +207,7 @@ public class UserService {
         userRepository.save(friend);
     }
 
-    private void removeNeo4jFriend(UserNeo4j userNeo4j, UserNeo4j friendNeo4j){
+    private void removeNeo4jFriend(UserNeo4j userNeo4j, UserNeo4j friendNeo4j) {
         //User neo4j
         List<UserNeo4j> userNeo4jFriends = userNeo4j.getFriends();
         userNeo4jFriends.remove(friendNeo4j);
@@ -217,8 +222,8 @@ public class UserService {
     }
 
     @Transactional(value = "chainedTransactionManager")
-    public void removeFriend(Integer userId, Integer friendId){
-        try{
+    public void removeFriend(Integer userId, Integer friendId) {
+        try {
             friendRequestRepository.deleteFriendRequestsByUserIdAndFriendId(userId, friendId);
 
             User user = userRepository.findById(userId).orElseThrow();
@@ -229,39 +234,67 @@ public class UserService {
 
             removePostgresFriend(user, friend);
             userNeo4jRepository.removeFriendsRelation(user.getId().longValue(), friend.getId().longValue());
-        }catch (DataAccessException e){
+        } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
 
     @Transactional(value = "chainedTransactionManager")
-    public UserResponse updateUser(UpdateUserRequest updateUserRequest){
+    public UpdateUserResponse updateUser(UpdateUserRequest updateUserRequest) {
         User user = userRepository.findById(updateUserRequest.getId()).orElseThrow();
+        UserNeo4j userNeo4j = userNeo4jRepository.findUserById(updateUserRequest.getId());
+
         user.setEmail(updateUserRequest.getEmail());
         user.setDateOfBirth(LocalDate.parse(updateUserRequest.getDateOfBirth()));
-        user.setGender(Gender.valueOf(updateUserRequest.getGender()));
+        user.setGender(Gender.valueOf(updateUserRequest.getGender().toUpperCase()));
         user.setFirstname(updateUserRequest.getFirstname());
         user.setLastname(updateUserRequest.getLastname());
-        user.setProfileImage(updateUserRequest.getProfileImage());
+        user.setProfileImage(user.getProfileImage());
 
-        userRepository.save(user);
-
-        UserNeo4j userNeo4j = userNeo4jRepository.findUserById(updateUserRequest.getId());
         userNeo4j.setEmail(updateUserRequest.getEmail());
         userNeo4j.setFirstname(updateUserRequest.getFirstname());
         userNeo4j.setLastname(updateUserRequest.getLastname());
-        userNeo4j.setProfileImage(updateUserRequest.getProfileImage());
 
-        userNeo4jRepository.save(userNeo4j);
+        if (updateUserRequest.getProfileImage() == null) {
+            if(userRepository.findByEmail(updateUserRequest.getEmail()).isPresent() && user.getEmail() != updateUserRequest.getEmail()){
+                return UpdateUserResponse.builder()
+                        .userResponse(null)
+                        .message("The entered email is already in use!")
+                        .build();
+            }
+            userRepository.save(user);
+            userNeo4jRepository.save(userNeo4j);
+        } else {
+            user.setProfileImage(updateUserRequest.getProfileImage());
+            userNeo4j.setProfileImage(updateUserRequest.getProfileImage());
+            userRepository.save(user);
+            userNeo4jRepository.save(userNeo4j);
+        }
 
-        return UserResponse.builder()
+        UserResponse userResponse = UserResponse.builder()
                 .profileImage(user.getProfileImage())
                 .id(user.getId())
-                .gender(user.getGender())
+                .gender(capitalizeFirstLetter(user.getGender().toString()))
                 .dateOfBirth(user.getDateOfBirth().toString())
                 .email(user.getEmail())
                 .firstname(user.getFirstname())
                 .lastname(user.getLastname())
                 .build();
+
+        return UpdateUserResponse.builder()
+                .userResponse(userResponse)
+                .message("Successfully!")
+                .build();
+    }
+
+    public String capitalizeFirstLetter(String input) {
+        if (input.isEmpty()) {
+            return input;
+        }
+
+        String prvoSlovoVeliko = input.substring(0, 1).toUpperCase();
+        String ostalaSlovaMala = input.substring(1).toLowerCase();
+
+        return prvoSlovoVeliko + ostalaSlovaMala;
     }
 }

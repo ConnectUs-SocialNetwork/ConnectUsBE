@@ -40,6 +40,7 @@ public class PagePostService {
     private final PagePostCommentRepository pagePostCommentRepository;
     private final NotificationService notificationService;
     private final UserNeo4jRepository userNeo4jRepository;
+    private final UserService userService;
 
     public PagePostResponse save(PagePostRequest pagePostRequest) {
         try {
@@ -82,7 +83,7 @@ public class PagePostService {
                     .dateOfBirth(user.getDateOfBirth().toString())
                     .firstname(user.getFirstname())
                     .lastname(user.getLastname())
-                    .gender(user.getGender())
+                    .gender(userService.capitalizeFirstLetter(user.getGender().toString()))
                     .profileImage(user.getProfileImage())
                     .build();
 

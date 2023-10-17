@@ -33,6 +33,8 @@ public class PageService {
     private final UserRepository userRepository;
     private final UserNeo4jRepository userNeo4jRepository;
     private final NotificationService notificationService;
+    private final UserService userService;
+
 
     @Transactional(value = "chainedTransactionManager")
     public Page save(PageRequest pageRequest) {
@@ -146,7 +148,7 @@ public class PageService {
                     .dateOfBirth(user.getDateOfBirth().toString())
                     .firstname(user.getFirstname())
                     .lastname(user.getLastname())
-                    .gender(user.getGender())
+                    .gender(userService.capitalizeFirstLetter(user.getGender().toString()))
                     .profileImage(user.getProfileImage())
                     .build();
 

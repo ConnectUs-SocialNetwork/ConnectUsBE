@@ -35,6 +35,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final UserService userService;
 
     @Transactional(value = "chainedTransactionManager")
     public AuthenticationResponse register(RegisterRequest request) {
@@ -76,7 +77,7 @@ public class AuthenticationService {
 
         return AuthenticationResponse.builder()
                 .tokens(TokensResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build())
-                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(user.getGender()).build())
+                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(userService.capitalizeFirstLetter(user.getGender().toString())).build())
                 .message("Successfully!")
                 .build();
     }
@@ -105,7 +106,7 @@ public class AuthenticationService {
         saveUserToken(user, jwtToken);
         return AuthenticationResponse.builder()
                 .tokens(TokensResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build())
-                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(user.getGender()).build())
+                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(userService.capitalizeFirstLetter(user.getGender().toString())).build())
                 .message("Successfully!")
                 .build();
     }
@@ -153,7 +154,7 @@ public class AuthenticationService {
                 saveUserToken(user, accessToken);
                 var authResponse = AuthenticationResponse.builder()
                         .tokens(TokensResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build())
-                        .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(user.getGender()).build())
+                        .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(userService.capitalizeFirstLetter(user.getGender().toString())).build())
                         .message("Successfully!")
                         .build();
                 new ObjectMapper().writeValue(response.getOutputStream(), authResponse);

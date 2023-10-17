@@ -42,6 +42,7 @@ public class PostService {
     private final CommentRepository commentRepository;
     private final NotificationService notificationService;
     private final UserNeo4jRepository userNeo4jRepository;
+    private final UserService userService;
 
     @Transactional
     public PostResponse save(Post post) {
@@ -123,7 +124,7 @@ public class PostService {
                     .dateOfBirth(user.getDateOfBirth().toString())
                     .firstname(user.getFirstname())
                     .lastname(user.getLastname())
-                    .gender(user.getGender())
+                    .gender(userService.capitalizeFirstLetter(user.getGender().toString()))
                     .profileImage(user.getProfileImage())
                     .build();
 

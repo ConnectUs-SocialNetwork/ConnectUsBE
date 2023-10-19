@@ -61,7 +61,6 @@ public class PostService {
         for (String i : request.getImages()) {
             images.add(Image.builder()
                     .image(i)
-                    .pagePost(null)
                     .post(post)
                     .build());
         }
@@ -179,7 +178,7 @@ public class PostService {
                     .isLiked(isLiked)
                     .numberOfLikes(post.getLikes().size())
                     .numberOfComments(numberOfComments)
-                    .profileImage(user.getProfileImage())
+                    .profileImage(post.getUser().getProfileImage())
                     .build();
             postResponseList.add(postResponse);
         }
@@ -289,6 +288,7 @@ public class PostService {
                 .isLiked(isLiked)
                 .numberOfLikes(post.getLikes().size())
                 .numberOfComments(numberOfComments)
+                .profileImage(post.getUser().getProfileImage())
                 .build();
 
         return postResponse;

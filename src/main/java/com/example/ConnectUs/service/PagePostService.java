@@ -41,12 +41,12 @@ public class PagePostService {
     private final NotificationService notificationService;
     private final UserNeo4jRepository userNeo4jRepository;
     private final UserService userService;
-    private final ImageService imageService;
+    private final PagePostImageService imageService;
 
     public PagePostResponse save(PagePostRequest pagePostRequest) {
         try {
             Page page = pageRepository.findById(pagePostRequest.getPageId()).orElseThrow();
-            List<Image> images = new ArrayList<>();
+            List<PagePostImage> images = new ArrayList<>();
             PagePost post = PagePost.builder()
                     .text(pagePostRequest.getPostText())
                     .dateAndTime(LocalDateTime.now())
@@ -54,17 +54,16 @@ public class PagePostService {
                     .build();
 
             for (String i : pagePostRequest.getImages()) {
-                images.add(Image.builder()
+                images.add(PagePostImage.builder()
                         .image(i)
                         .pagePost(post)
-                        .post(null)
                         .build());
             }
 
             post.setImages(images);
 
             PagePost savedPost = postRepository.save(post);
-            for(Image i : images){
+            for(PagePostImage i : images){
                 imageService.save(i);
             }
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -121,7 +120,7 @@ public class PagePostService {
                     .postId(post.getId())
                     .pageId(post.getPage().getId())
                     .name(post.getPage().getName())
-                    .images(post.getImages().stream().map(Image::getImage).collect(Collectors.toList()))
+                    .images(post.getImages().stream().map(PagePostImage::getImage).collect(Collectors.toList()))
                     .text(post.getText())
                     .dateAndTime(formattedDateTime)
                     .isLiked(isLiked)
@@ -254,12 +253,13 @@ public class PagePostService {
                 .postId(post.getId())
                 .pageId(post.getPage().getId())
                 .name(post.getPage().getName())
-                .images(post.getImages().stream().map(Image::getImage).collect(Collectors.toList()))
+                .images(post.getImages().stream().map(PagePostImage::getImage).collect(Collectors.toList()))
                 .text(post.getText())
                 .dateAndTime(formattedDateTime)
                 .isLiked(isLiked)
                 .numberOfLikes(post.getLikes().size())
                 .numberOfComments(numberOfComments)
+                .profileImage(post.getPage().getAvatar())
                 .build();
 
         return postResponse;

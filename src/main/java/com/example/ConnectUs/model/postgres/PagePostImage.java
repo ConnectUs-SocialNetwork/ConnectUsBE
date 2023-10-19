@@ -6,15 +6,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "image")
-public class Image {
+@Table(name = "page_post_image")
+public class PagePostImage {
     @Id
     @GeneratedValue
     private Integer id;
@@ -22,7 +20,6 @@ public class Image {
     private String image;
 
     @ManyToOne
-    @JoinColumn(name = "post_id")
-    private Post post;
-
+    @JoinColumn(name = "page_post_id")
+    private PagePost pagePost;
 }

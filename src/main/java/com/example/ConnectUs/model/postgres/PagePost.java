@@ -30,5 +30,5 @@ public class PagePost {
     private List<User> likes;
 
     @OneToMany(mappedBy = "pagePost")
-    private List<Image> images;
+    private List<PagePostImage> images;
 }

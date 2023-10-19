@@ -21,7 +21,7 @@ public class PagePostResponse implements Comparable<PagePostResponse>{
     private String name;
     private String profileImage;
     private String text;
-    private String imageInBase64;
+    private List<String> images;
     private String dateAndTime;
     private boolean isLiked;
     private Integer numberOfLikes;

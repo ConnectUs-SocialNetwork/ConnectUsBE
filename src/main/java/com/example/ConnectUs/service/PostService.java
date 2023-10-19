@@ -1,12 +1,14 @@
 package com.example.ConnectUs.service;
 
 import com.example.ConnectUs.dto.authentication.UserResponse;
+import com.example.ConnectUs.dto.post.PostRequest;
 import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.enumerations.NotificationType;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
 import com.example.ConnectUs.model.neo4j.UserNeo4j;
+import com.example.ConnectUs.model.postgres.Image;
 import com.example.ConnectUs.model.postgres.Notification;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
@@ -43,10 +45,34 @@ public class PostService {
     private final NotificationService notificationService;
     private final UserNeo4jRepository userNeo4jRepository;
     private final UserService userService;
+    private final ImageService imageService;
 
     @Transactional
-    public PostResponse save(Post post) {
+    public PostResponse save(PostRequest request) {
+        User user = userService.findByEmail(request.getUserEmail()).orElse(new User());
+        List<Image> images = new ArrayList<>();
+
+        Post post = Post.builder()
+                .text(request.getPostText())
+                .dateAndTime(LocalDateTime.now())
+                .user(user)
+                .build();
+
+        for (String i : request.getImages()) {
+            images.add(Image.builder()
+                    .image(i)
+                    .pagePost(null)
+                    .post(post)
+                    .build());
+        }
+
+        post.setImages(images);
+
         Post savedPost = postRepository.save(post);
+        for(Image i : images){
+            imageService.save(i);
+        }
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedDateTime = savedPost.getDateAndTime().format(formatter);
         return PostResponse.builder()
@@ -55,8 +81,7 @@ public class PostService {
                 .firstname(post.getUser().getFirstname())
                 .lastname(post.getUser().getLastname())
                 .profileImage(post.getUser().getProfileImage())
-                .imageInBase64(post.getImageData())
-                .imageInBase64(savedPost.getImageData())
+                .images(request.getImages())
                 .text(savedPost.getText())
                 .dateAndTime(formattedDateTime)
                 .numberOfLikes(0)
@@ -102,10 +127,10 @@ public class PostService {
         return postsResponse;
     }
 
-    private List<Post> getPostsFromUserFriends(List<User> friends){
+    private List<Post> getPostsFromUserFriends(List<User> friends) {
         List<Post> posts = new ArrayList<>();
 
-        for(User u : friends){
+        for (User u : friends) {
             List<Post> friendPostList = postRepository.findAllByUserId(u.getId());
             posts.addAll(friendPostList);
         }
@@ -148,7 +173,7 @@ public class PostService {
                     .userId(post.getUser().getId())
                     .firstname(post.getUser().getFirstname())
                     .lastname(post.getUser().getLastname())
-                    .imageInBase64(post.getImageData())
+                    .images(post.getImages().stream().map(Image::getImage).collect(Collectors.toList()))
                     .text(post.getText())
                     .dateAndTime(formattedDateTime)
                     .isLiked(isLiked)
@@ -176,7 +201,7 @@ public class PostService {
         user.setLikedPosts(likedPosts);
         userRepository.save(user);
 
-        if(post.getUser().getId() != user.getId()){
+        if (post.getUser().getId() != user.getId()) {
             notificationService.save(Notification.builder()
                     .firstname(user.getFirstname())
                     .lastname(user.getLastname())
@@ -232,7 +257,7 @@ public class PostService {
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
                         .build();
-                if(!searchUserResponse.isFriend()){
+                if (!searchUserResponse.isFriend()) {
                     searchUserResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
                     searchUserResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), myId.intValue()));
                 }
@@ -258,7 +283,7 @@ public class PostService {
                 .userId(post.getUser().getId())
                 .firstname(post.getUser().getFirstname())
                 .lastname(post.getUser().getLastname())
-                .imageInBase64(post.getImageData())
+                .images(post.getImages().stream().map(Image::getImage).collect(Collectors.toList()))
                 .text(post.getText())
                 .dateAndTime(formattedDateTime)
                 .isLiked(isLiked)

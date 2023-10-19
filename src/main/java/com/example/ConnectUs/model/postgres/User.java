@@ -32,6 +32,7 @@ public class User implements UserDetails {
     private String email;
     private String password;
     private LocalDate dateOfBirth;
+    @Column(name = "profileImage", columnDefinition = "TEXT")
     private String profileImage;
 
     @Enumerated(EnumType.STRING)
@@ -71,9 +72,6 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "page_post_id"))
     @JsonIgnore
     private List<PagePost> likedPagePosts;
-
-    @ManyToMany(mappedBy = "taggedUsers")
-    private List<Image> taggedImages;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

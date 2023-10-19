@@ -20,8 +20,6 @@ public class PagePost {
     @GeneratedValue
     private Integer id;
     private String text;
-    @Column(name = "imagedata", columnDefinition = "TEXT")
-    private String imageData;
     private LocalDateTime dateAndTime;
 
     @ManyToOne
@@ -30,4 +28,7 @@ public class PagePost {
 
     @ManyToMany(mappedBy = "likedPagePosts")
     private List<User> likes;
+
+    @OneToMany(mappedBy = "pagePost")
+    private List<Image> images;
 }

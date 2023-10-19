@@ -26,8 +26,6 @@ public class Post {
     @GeneratedValue
     private Integer id;
     private String text;
-    @Column(name = "imagedata", columnDefinition = "TEXT")
-    private String imageData;
     private LocalDateTime dateAndTime;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -41,4 +39,7 @@ public class Post {
 
     @OneToMany(mappedBy = "post")
     private List<Comment> comments;
+
+    @OneToMany(mappedBy = "post")
+    private List<Image> images;
 }

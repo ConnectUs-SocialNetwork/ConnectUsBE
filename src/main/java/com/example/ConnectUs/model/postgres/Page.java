@@ -20,6 +20,7 @@ public class Page {
     private String name;
     private String description;
     private PageCategory category;
+    @Column(name = "avatar", columnDefinition = "TEXT")
     private String avatar;
 
     @ManyToOne

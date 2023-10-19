@@ -41,28 +41,43 @@ public class PagePostService {
     private final NotificationService notificationService;
     private final UserNeo4jRepository userNeo4jRepository;
     private final UserService userService;
+    private final ImageService imageService;
 
     public PagePostResponse save(PagePostRequest pagePostRequest) {
         try {
             Page page = pageRepository.findById(pagePostRequest.getPageId()).orElseThrow();
+            List<Image> images = new ArrayList<>();
             PagePost post = PagePost.builder()
                     .text(pagePostRequest.getPostText())
-                    .imageData(pagePostRequest.getImageInBase64())
                     .dateAndTime(LocalDateTime.now())
                     .page(page)
                     .build();
 
-            PagePost savedPagePost = postRepository.save(post);
+            for (String i : pagePostRequest.getImages()) {
+                images.add(Image.builder()
+                        .image(i)
+                        .pagePost(post)
+                        .post(null)
+                        .build());
+            }
+
+            post.setImages(images);
+
+            PagePost savedPost = postRepository.save(post);
+            for(Image i : images){
+                imageService.save(i);
+            }
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            String formattedDateTime = savedPagePost.getDateAndTime().format(formatter);
+            String formattedDateTime = savedPost.getDateAndTime().format(formatter);
 
             return PagePostResponse.builder()
                     .isLiked(false)
-                    .pageId(savedPagePost.getId())
-                    .name(savedPagePost.getPage().getName())
-                    .profileImage(savedPagePost.getPage().getAvatar())
-                    .imageInBase64(savedPagePost.getImageData())
-                    .text(savedPagePost.getText())
+                    .postId(savedPost.getId())
+                    .pageId(savedPost.getId())
+                    .name(savedPost.getPage().getName())
+                    .profileImage(savedPost.getPage().getAvatar())
+                    .images(pagePostRequest.getImages())
+                    .text(savedPost.getText())
                     .dateAndTime(formattedDateTime)
                     .numberOfLikes(0)
                     .numberOfComments(0)
@@ -106,7 +121,7 @@ public class PagePostService {
                     .postId(post.getId())
                     .pageId(post.getPage().getId())
                     .name(post.getPage().getName())
-                    .imageInBase64(post.getImageData())
+                    .images(post.getImages().stream().map(Image::getImage).collect(Collectors.toList()))
                     .text(post.getText())
                     .dateAndTime(formattedDateTime)
                     .isLiked(isLiked)
@@ -239,7 +254,7 @@ public class PagePostService {
                 .postId(post.getId())
                 .pageId(post.getPage().getId())
                 .name(post.getPage().getName())
-                .imageInBase64(post.getImageData())
+                .images(post.getImages().stream().map(Image::getImage).collect(Collectors.toList()))
                 .text(post.getText())
                 .dateAndTime(formattedDateTime)
                 .isLiked(isLiked)

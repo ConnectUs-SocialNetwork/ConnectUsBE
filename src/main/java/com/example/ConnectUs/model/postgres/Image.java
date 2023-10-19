@@ -18,14 +18,14 @@ public class Image {
     @Id
     @GeneratedValue
     private Integer id;
-    @Column(name = "image_in_base64", columnDefinition = "TEXT")
-    private String imageInBase64;
+    @Column(name = "image", columnDefinition = "TEXT")
+    private String image;
 
-    @ManyToMany
-    @JoinTable(
-            name = "image_user_tags",
-            joinColumns = @JoinColumn(name = "image_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private List<User> taggedUsers;
+    @ManyToOne
+    @JoinColumn(name = "post_id")
+    private Post post;
+
+    @ManyToOne
+    @JoinColumn(name = "page_post_id")
+    private PagePost pagePost;
 }

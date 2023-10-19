@@ -40,7 +40,7 @@ public class AuthenticationService {
     @Transactional(value = "chainedTransactionManager")
     public AuthenticationResponse register(RegisterRequest request) {
         Optional<User> u = repository.findByEmail(request.getEmail());
-        if(u.isPresent()){
+        if (u.isPresent()) {
             return AuthenticationResponse.builder()
                     .tokens(new TokensResponse())
                     .user(new UserResponse())
@@ -83,14 +83,14 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        try{
+        try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
                             request.getPassword()
                     )
             );
-        }catch(BadCredentialsException e){
+        } catch (BadCredentialsException e) {
             return AuthenticationResponse.builder()
                     .tokens(new TokensResponse())
                     .user(new UserResponse())
@@ -106,7 +106,14 @@ public class AuthenticationService {
         saveUserToken(user, jwtToken);
         return AuthenticationResponse.builder()
                 .tokens(TokensResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build())
-                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(userService.capitalizeFirstLetter(user.getGender().toString())).build())
+                .user(UserResponse.builder()
+                        .id(user.getId())
+                        .email(user.getEmail())
+                        .firstname(user.getFirstname()).lastname(user.getLastname())
+                        .dateOfBirth(user.getDateOfBirth().toString())
+                        .gender(userService.capitalizeFirstLetter(user.getGender().toString()))
+                        .profileImage(user.getProfileImage())
+                        .build())
                 .message("Successfully!")
                 .build();
     }
@@ -140,7 +147,7 @@ public class AuthenticationService {
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         final String refreshToken;
         final String userEmail;
-        if (authHeader == null ||!authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return;
         }
         refreshToken = authHeader.substring(7);

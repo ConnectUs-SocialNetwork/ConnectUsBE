@@ -22,6 +22,7 @@ public class Notification {
     private String text;
     private NotificationType type;
     private Integer entityId;
+    @Column(name = "avatar", columnDefinition = "TEXT")
     private String avatar;
     private LocalDateTime dateAndTime;
     private boolean isRead;

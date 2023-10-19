@@ -6,8 +6,10 @@ import com.example.ConnectUs.dto.post.PostResponse;
 import com.example.ConnectUs.dto.post.PostsResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
+import com.example.ConnectUs.model.postgres.Image;
 import com.example.ConnectUs.model.postgres.Post;
 import com.example.ConnectUs.model.postgres.User;
+import com.example.ConnectUs.service.ImageService;
 import com.example.ConnectUs.service.PostService;
 import com.example.ConnectUs.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import java.io.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
@@ -26,19 +29,13 @@ import java.util.List;
 public class PostController {
     private final PostService postService;
     private final UserService userService;
+    private final ImageService imageService;
 
     @PostMapping("/save")
     public ResponseEntity<PostResponse> save(
             @RequestBody PostRequest request
     ) {
-        User user = userService.findByEmail(request.getUserEmail()).orElse(new User());
-        Post post = Post.builder()
-                .text(request.getPostText())
-                .imageData(request.getImageInBase64())
-                .dateAndTime(LocalDateTime.now())
-                .user(user)
-                .build();
-        return ResponseEntity.ok(postService.save(post));
+        return ResponseEntity.ok(postService.save(request));
     }
 
     @GetMapping("/feed")

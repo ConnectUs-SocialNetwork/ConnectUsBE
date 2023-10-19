@@ -24,7 +24,7 @@ public class PostResponse implements Comparable<PostResponse>{
     private String lastname;
     private String profileImage;
     private String text;
-    private String imageInBase64;
+    private List<String> images;
     private String dateAndTime;
     private boolean isLiked;
     private Integer numberOfLikes;

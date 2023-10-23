@@ -7,14 +7,22 @@ import com.example.ConnectUs.dto.user.UpdateUserResponse;
 import com.example.ConnectUs.dto.user.UserProfileResponse;
 import com.example.ConnectUs.enumerations.Gender;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
+import com.example.ConnectUs.model.mongo.UserMongo;
 import com.example.ConnectUs.model.neo4j.UserNeo4j;
-import com.example.ConnectUs.model.postgres.FriendRequest;
 import com.example.ConnectUs.model.postgres.User;
+import com.example.ConnectUs.repository.mongo.UserMongoRepository;
 import com.example.ConnectUs.repository.neo4j.UserNeo4jRepository;
 import com.example.ConnectUs.repository.postgres.FriendRequestRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Metrics;
+import org.springframework.data.geo.Point;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.NearQuery;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +38,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserNeo4jRepository userNeo4jRepository;
     private final FriendRequestRepository friendRequestRepository;
+    private final UserMongoRepository userMongoRepository;
+    private final MongoTemplate mongoTemplate;
 
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
@@ -296,5 +306,18 @@ public class UserService {
         String ostalaSlovaMala = input.substring(1).toLowerCase();
 
         return prvoSlovoVeliko + ostalaSlovaMala;
+    }
+
+    public List<UserMongo> recommendUsersWithinXkm(Integer userId, Integer x) {
+        UserMongo user = userMongoRepository.findById(userId).orElseThrow();
+        Point point = new Point(user.getLocation().getX(), user.getLocation().getY());
+        Distance distance = new Distance(x, Metrics.KILOMETERS);
+        List<UserMongo> recommendedUsers = userMongoRepository.findByLocationNear(point, distance);
+
+        return recommendedUsers;
+    }
+
+    public List<UserMongo> getRecommendedUsers(Integer userId){
+        return recommendUsersWithinXkm(userId, 10);
     }
 }

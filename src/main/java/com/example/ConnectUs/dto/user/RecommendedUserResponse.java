@@ -1,6 +1,5 @@
-package com.example.ConnectUs.dto.authentication;
+package com.example.ConnectUs.dto.user;
 
-import com.example.ConnectUs.enumerations.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,14 +9,14 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequest {
-
+public class RecommendedUserResponse {
+    private Integer id;
     private String firstname;
     private String lastname;
     private String email;
-    private String password;
-    private String dateOfBirth;
-    private String gender;
+    private String profileImage;
+    private Integer numberOfFriends;
+    private Integer numberOfMutualFriends;
     private String country;
     private String city;
     private String street;

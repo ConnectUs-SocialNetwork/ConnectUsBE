@@ -25,6 +25,10 @@ public class UserNeo4j {
     private String lastname;
     private String email;
     private String profileImage;
+    private String number;
+    private String street;
+    private String city;
+    private String country;
 
     @Relationship(type = "FRIENDS_WITH")
     private List<UserNeo4j> friends;

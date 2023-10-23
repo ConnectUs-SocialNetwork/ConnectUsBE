@@ -6,6 +6,7 @@ import com.example.ConnectUs.dto.user.UpdateUserRequest;
 import com.example.ConnectUs.dto.user.UpdateUserResponse;
 import com.example.ConnectUs.dto.user.UserProfileResponse;
 import com.example.ConnectUs.exceptions.DatabaseAccessException;
+import com.example.ConnectUs.model.mongo.UserMongo;
 import com.example.ConnectUs.model.postgres.FriendRequest;
 import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.service.UserService;
@@ -95,5 +96,10 @@ public class UserController {
         }catch (DataAccessException e){
             return ResponseEntity.status(500).body(null);
         }
+    }
+
+    @GetMapping("/getRecommendedUsers")
+    public ResponseEntity<List<UserMongo>> getRecommendedUsers(@RequestParam Integer userId){
+        return ResponseEntity.ok(userService.getRecommendedUsers(userId));
     }
 }

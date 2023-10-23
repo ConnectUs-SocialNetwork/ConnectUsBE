@@ -4,15 +4,23 @@ import com.example.ConnectUs.dto.authentication.*;
 import com.example.ConnectUs.enumerations.Gender;
 import com.example.ConnectUs.enumerations.Role;
 import com.example.ConnectUs.enumerations.TokenType;
+import com.example.ConnectUs.geocoder.Geocoder;
+import com.example.ConnectUs.model.mongo.UserMongo;
 import com.example.ConnectUs.model.neo4j.UserNeo4j;
+import com.example.ConnectUs.model.postgres.Location;
 import com.example.ConnectUs.model.postgres.Token;
 import com.example.ConnectUs.model.postgres.User;
+import com.example.ConnectUs.repository.mongo.UserMongoRepository;
 import com.example.ConnectUs.repository.neo4j.UserNeo4jRepository;
 import com.example.ConnectUs.repository.postgres.TokenRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.model.geojson.Point;
+import com.mongodb.client.model.geojson.Position;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -36,50 +44,90 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
+    private final UserMongoRepository userMongoRepository;
+    private final Geocoder geocoder;
 
     @Transactional(value = "chainedTransactionManager")
     public AuthenticationResponse register(RegisterRequest request) {
-        Optional<User> u = repository.findByEmail(request.getEmail());
-        if (u.isPresent()) {
-            return AuthenticationResponse.builder()
-                    .tokens(new TokensResponse())
-                    .user(new UserResponse())
-                    .message("The entered email is already in use!")
+
+        //Gokodiranje adrese
+        String addressString = String.format("%s, %s, %s %s", request.getCountry(), request.getCity(), request.getStreet(), request.getNumber());
+        try {
+            JsonNode locationInformation = geocoder.getLocationInformationFromAddress(addressString);
+            if (locationInformation.isEmpty()) {
+                return AuthenticationResponse.builder()
+                        .tokens(new TokensResponse())
+                        .user(new UserResponse())
+                        .message("Location information are not correct!")
+                        .build();
+            }
+            JsonNode position = locationInformation.get("position");
+
+            Double lat = position.get("lat").asDouble();
+            Double lng = position.get("lng").asDouble();
+
+            Optional<User> u = repository.findByEmail(request.getEmail());
+            if (u.isPresent()) {
+                return AuthenticationResponse.builder()
+                        .tokens(new TokensResponse())
+                        .user(new UserResponse())
+                        .message("The entered email is already in use!")
+                        .build();
+            }
+
+            //postgres
+            var user = User.builder()
+                    .firstname(request.getFirstname())
+                    .lastname(request.getLastname())
+                    .email(request.getEmail())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .role(Role.REGISTERED_USER)
+                    .dateOfBirth(LocalDate.parse(request.getDateOfBirth()))
+                    .gender(Gender.valueOf(request.getGender().toUpperCase()))
+                    .profileImage("")
+                    .location(Location.builder()
+                            .country(request.getCountry())
+                            .city(request.getCity())
+                            .street(request.getStreet())
+                            .number(request.getNumber())
+                            .build())
                     .build();
+            var savedUser = repository.save(user);
+            var jwtToken = jwtService.generateToken(user);
+            var refreshToken = jwtService.generateRefreshToken(user);
+            saveUserToken(savedUser, jwtToken);
+
+            //neo4j
+            UserNeo4j userNeo4j = UserNeo4j.builder()
+                    .id(user.getId().longValue())
+                    .email(user.getEmail())
+                    .firstname(user.getFirstname())
+                    .lastname(user.getLastname())
+                    .profileImage("")
+                    .country(request.getCountry())
+                    .city(request.getCity())
+                    .street(request.getStreet())
+                    .number(request.getNumber())
+                    .build();
+
+            userNeo4jRepository.save(userNeo4j);
+
+            //mongodb
+            UserMongo userMongo = UserMongo.builder()
+                    .id(user.getId())
+                    .location(new GeoJsonPoint(lat, lng))
+                    .build();
+
+            userMongoRepository.save(userMongo);
+
+            return AuthenticationResponse.builder()
+                    .tokens(TokensResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build())
+                    .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(userService.capitalizeFirstLetter(user.getGender().toString())).build())
+                    .message("Successfully!")
+                    .build();
+        } catch (Exception e) {
+            return null;
         }
-
-        //postgres
-        var user = User.builder()
-                .firstname(request.getFirstname())
-                .lastname(request.getLastname())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.REGISTERED_USER)
-                .dateOfBirth(LocalDate.parse(request.getDateOfBirth()))
-                .gender(Gender.valueOf(request.getGender().toUpperCase()))
-                .profileImage("")
-                .build();
-        var savedUser = repository.save(user);
-        var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefreshToken(user);
-        saveUserToken(savedUser, jwtToken);
-
-        //neo4j
-        UserNeo4j userNeo4j = UserNeo4j.builder()
-                .id(user.getId().longValue())
-                .email(user.getEmail())
-                .firstname(user.getFirstname())
-                .lastname(user.getLastname())
-                .profileImage("")
-                .build();
-
-        userNeo4jRepository.save(userNeo4j);
-
-        return AuthenticationResponse.builder()
-                .tokens(TokensResponse.builder().accessToken(jwtToken).refreshToken(refreshToken).build())
-                .user(UserResponse.builder().id(user.getId()).email(user.getEmail()).firstname(user.getFirstname()).lastname(user.getLastname()).dateOfBirth(user.getDateOfBirth().toString()).gender(userService.capitalizeFirstLetter(user.getGender().toString())).build())
-                .message("Successfully!")
-                .build();
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {

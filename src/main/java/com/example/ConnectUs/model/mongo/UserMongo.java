@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
@@ -18,6 +19,5 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 public class UserMongo {
     @MongoId
     private Integer id;
-    @GeoSpatialIndexed(type = GeoSpatialIndexType.GEO_2D)
     private GeoJsonPoint location;
 }

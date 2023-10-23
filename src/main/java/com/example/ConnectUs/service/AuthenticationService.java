@@ -16,10 +16,12 @@ import com.example.ConnectUs.repository.postgres.TokenRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.geojson.Point;
 import com.mongodb.client.model.geojson.Position;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +48,7 @@ public class AuthenticationService {
     private final UserService userService;
     private final UserMongoRepository userMongoRepository;
     private final Geocoder geocoder;
+    private final MongoTemplate mongoTemplate;
 
     @Transactional(value = "chainedTransactionManager")
     public AuthenticationResponse register(RegisterRequest request) {

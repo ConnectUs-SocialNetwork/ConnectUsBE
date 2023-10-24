@@ -331,13 +331,17 @@ public class UserService {
         allRecommendedUserIds.addAll(userNeo4jRepository.recommendFriendsOfMyFriends(userId).stream().limit(5).collect(Collectors.toList()));
         allRecommendedUserIds.addAll(userNeo4jRepository.recommendUsersBasedOnTheirInterest(userId).stream().limit(5).collect(Collectors.toList()));
         allRecommendedUserIds.remove(userId);
-        int fromIndex = 0;
-        while(allRecommendedUserIds.size() < 15){
-            int listPaddingLength = 15 - allRecommendedUserIds.size();
-            allRecommendedUserIds.addAll(supplementaryRecommendations.subList(fromIndex, fromIndex + listPaddingLength));
-            allRecommendedUserIds.stream().distinct().collect(Collectors.toList());
-            fromIndex = listPaddingLength;
+        allRecommendedUserIds = allRecommendedUserIds.stream().distinct().collect(Collectors.toList());
+
+        if(allRecommendedUserIds.size() < 15){
+            for(Long id: supplementaryRecommendations){
+                if(!allRecommendedUserIds.contains(id))
+                    allRecommendedUserIds.add(id);
+                if(allRecommendedUserIds.size() == 15)
+                    break;
+            }
         }
+
         List<Long> finalList = allRecommendedUserIds;
         Collections.shuffle(finalList);
 

@@ -48,7 +48,7 @@ public interface UserNeo4jRepository extends Neo4jRepository<UserNeo4j, Long> {
             "WITH friendFriend, COLLECT(userFriend) AS commonFriends\n" +
             "WHERE SIZE(commonFriends) >= 5\n" +
             "AND NOT friendFriend.id = $userID\n" +
-            "RETURN DISTINCT friendFriend.long")
+            "RETURN DISTINCT friendFriend.id")
     List<Long> recommendFriendsOfMyFriends(@Param("userID") Long userID);
 
     @Query("MATCH (currentUser:user {id: $yourId}) " +
@@ -71,7 +71,7 @@ public interface UserNeo4jRepository extends Neo4jRepository<UserNeo4j, Long> {
             "MATCH (p:page {category: likedPage.category}) " +
             "WITH friendOfFriend, p as correspondingPages " +
             "MATCH (correspondingPages)-[:LIKED_BY]->(potentialFriend:user {id: friendOfFriend.id}) " +
-            "RETURN potentialFriend.id")
+            "return potentialFriend.id ")
     List<Long> recommendUsersBasedOnTheirInterest(@Param("yourId") Long yourId);
 
     @Query("MATCH (currentUser:user {id: $yourId}) " +

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -27,6 +28,12 @@ public class AuthenticationController {
             @RequestBody RegisterRequest request
     ) {
         return ResponseEntity.ok(service.register(request));
+    }
+
+    @PostMapping("/saveAllUsers")
+    public ResponseEntity saveAllUsers(@RequestBody List<RegisterRequest> registerRequests){
+        service.saveAllUsers(registerRequests);
+        return ResponseEntity.status(200).body(true);
     }
     @PostMapping("/authenticate")
     public ResponseEntity<AuthenticationResponse> authenticate(

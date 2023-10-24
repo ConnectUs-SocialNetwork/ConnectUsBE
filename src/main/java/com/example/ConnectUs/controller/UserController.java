@@ -2,6 +2,7 @@ package com.example.ConnectUs.controller;
 
 import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
+import com.example.ConnectUs.dto.user.RecommendedUserResponse;
 import com.example.ConnectUs.dto.user.UpdateUserRequest;
 import com.example.ConnectUs.dto.user.UpdateUserResponse;
 import com.example.ConnectUs.dto.user.UserProfileResponse;
@@ -99,7 +100,7 @@ public class UserController {
     }
 
     @GetMapping("/getRecommendedUsers")
-    public ResponseEntity<List<UserMongo>> getRecommendedUsers(@RequestParam Integer userId){
-        return ResponseEntity.ok(userService.getRecommendedUsers(userId));
+    public ResponseEntity<List<RecommendedUserResponse>> getRecommendedUsers(@RequestParam Integer userId){
+        return ResponseEntity.ok(userService.getRecommendedUsers(userId.longValue()));
     }
 }

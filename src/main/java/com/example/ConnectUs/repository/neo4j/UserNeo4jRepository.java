@@ -1,5 +1,6 @@
 package com.example.ConnectUs.repository.neo4j;
 
+import com.example.ConnectUs.dto.user.RecommendedUserResponse;
 import com.example.ConnectUs.model.neo4j.UserNeo4j;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
@@ -40,4 +41,36 @@ public interface UserNeo4jRepository extends Neo4jRepository<UserNeo4j, Long> {
             "(u.id = $friendId AND f.id = $userId) " +
             "DELETE r")
     void removeFriendsRelation(@Param("userId") Long userId, @Param("friendId") Long friendId);
+
+    @Query("MATCH (user:user {id: $userID})-[:FRIENDS_WITH]->(userFriend:user)\n" +
+            "MATCH (friendFriend:user)-[:FRIENDS_WITH]->(userFriend)\n" +
+            "WHERE userFriend.id <> $userID\n" +
+            "WITH friendFriend, COLLECT(userFriend) AS commonFriends\n" +
+            "WHERE SIZE(commonFriends) >= 5\n" +
+            "AND NOT friendFriend.id = $userID\n" +
+            "RETURN DISTINCT friendFriend")
+    List<UserNeo4j> recommendFriendsOfMyFriends(@Param("userID") Long userID);
+
+    @Query("MATCH (currentUser:user {id: $yourId}) " +
+            "MATCH (user:user) " +
+            "WHERE user.id IN $userIds " +
+            "WITH currentUser, user, [(currentUser)-[:FRIENDS_WITH]-(friend) | friend] AS yourFriends, [(user)-[:FRIENDS_WITH]-(friend) | friend] AS userFriends " +
+            "RETURN user.id AS id, user.firstname AS firstname, user.lastname AS lastname, " +
+            "user.email AS email, user.profileImage AS profileImage, " +
+            "size(userFriends)/2 AS numberOfFriends, " +
+            "user.country AS country, user.city AS city, " +
+            "user.street AS street, user.number AS number, " +
+            "size([friend IN yourFriends WHERE friend IN userFriends])/2 AS numberOfMutualFriends")
+    List<RecommendedUserResponse> findRecommendedUsers(@Param("yourId") Long yourId, @Param("userIds") List<Long> userIds);
+
+    @Query("MATCH (currentUser:user {id: $yourId})-[:FRIENDS_WITH]->(userFriend:user) " +
+            "MATCH (friendOfFriend:user)-[:FRIENDS_WITH]->(userFriend) " +
+            "WHERE friendOfFriend.id <> $yourId " +
+            "WITH DISTINCT friendOfFriend " +
+            "MATCH (likedPage:page)-[:LIKED_BY]->(currentUser:user {id: $yourId}) " +
+            "MATCH (p:page {category: likedPage.category}) " +
+            "WITH friendOfFriend, p as correspondingPages " +
+            "MATCH (correspondingPages)-[:LIKED_BY]->(potentialFriend:user {id: friendOfFriend.id}) " +
+            "RETURN potentialFriend")
+    List<UserNeo4j> recommendUsersBasedOnTheirInterest(@Param("yourId") Long yourId);
 }

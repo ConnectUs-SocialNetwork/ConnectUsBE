@@ -2,6 +2,7 @@ package com.example.ConnectUs.service;
 
 import com.example.ConnectUs.dto.authentication.UserResponse;
 import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
+import com.example.ConnectUs.dto.user.RecommendedUserResponse;
 import com.example.ConnectUs.dto.user.UpdateUserRequest;
 import com.example.ConnectUs.dto.user.UpdateUserResponse;
 import com.example.ConnectUs.dto.user.UserProfileResponse;
@@ -14,14 +15,12 @@ import com.example.ConnectUs.repository.mongo.UserMongoRepository;
 import com.example.ConnectUs.repository.neo4j.UserNeo4jRepository;
 import com.example.ConnectUs.repository.postgres.FriendRequestRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
-import com.mongodb.client.model.geojson.Position;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -91,6 +91,10 @@ public class UserService {
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
                         .build();
+                if (!searchUserResponse.isFriend()) {
+                    searchUserResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
+                    searchUserResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), userId.intValue()));
+                }
                 responseList.add(searchUserResponse);
             }
             return responseList;
@@ -113,6 +117,10 @@ public class UserService {
                         .email(u.getEmail())
                         .profileImage(u.getProfileImage())
                         .build();
+                if (!userResponse.isFriend()) {
+                    userResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
+                    userResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), userId.intValue()));
+                }
 
                 responseList.add(userResponse);
             }
@@ -307,16 +315,34 @@ public class UserService {
         return prvoSlovoVeliko + ostalaSlovaMala;
     }
 
-    public List<UserMongo> recommendUsersWithinXkm(Integer userId, Integer x) {
+    public List<Long> recommendUsersWithinXkm(Integer userId, Integer x) {
         UserMongo user = userMongoRepository.findById(userId).orElseThrow();
         Point point = new Point(user.getLocation().getX(), user.getLocation().getY());
         Distance distance = new Distance(x, Metrics.KILOMETERS);
         List<UserMongo> recommendedUsers = userMongoRepository.findByLocationNear(point, distance);
 
-        return recommendedUsers;
+        return recommendedUsers.stream().map((UserMongo::getId)).collect(Collectors.toList()).stream().map(Integer::longValue).collect(Collectors.toList());
     }
 
-    public List<UserMongo> getRecommendedUsers(Integer userId){
-        return recommendUsersWithinXkm(userId, 10);
+    public List<Long> recommendFriendsOfMyFriends(Long userId){
+        List<UserNeo4j> userList = userNeo4jRepository.recommendFriendsOfMyFriends(userId);
+        return userList.stream().map(UserNeo4j::getId).collect(Collectors.toList());
     }
+
+    public List<Long> recommendUsersBasedOnTheirInterest(Long userId){
+        List<UserNeo4j> userList = userNeo4jRepository.recommendUsersBasedOnTheirInterest(userId);
+        return userList.stream().map(UserNeo4j::getId).collect(Collectors.toList());
+    }
+
+    public List<RecommendedUserResponse> getRecommendedUsers(Long userId){
+        List<Long> allRecommendedUserIds = new ArrayList<>();
+        allRecommendedUserIds.addAll(recommendUsersWithinXkm(userId.intValue(), 10));
+        allRecommendedUserIds.addAll(recommendFriendsOfMyFriends(userId));
+        allRecommendedUserIds.addAll(recommendUsersBasedOnTheirInterest(userId));
+        allRecommendedUserIds.remove(userId);
+
+        return userNeo4jRepository.findRecommendedUsers(userId, allRecommendedUserIds);
+    }
+
+
 }

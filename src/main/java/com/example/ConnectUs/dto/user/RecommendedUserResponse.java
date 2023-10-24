@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RecommendedUserResponse {
-    private Integer id;
+    private Long id;
     private String firstname;
     private String lastname;
     private String email;

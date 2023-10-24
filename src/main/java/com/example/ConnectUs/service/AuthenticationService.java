@@ -34,6 +34,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -130,6 +132,55 @@ public class AuthenticationService {
                     .build();
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    public void saveAllUsers(List<RegisterRequest> registerRequests){
+        for(RegisterRequest request : registerRequests){
+            String addressString = String.format("%s, %s, %s %s", request.getCountry(), request.getCity(), request.getStreet(), request.getNumber());
+            var user = User.builder()
+                    .firstname(request.getFirstname())
+                    .lastname(request.getLastname())
+                    .email(request.getEmail())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .role(Role.REGISTERED_USER)
+                    .dateOfBirth(LocalDate.parse(request.getDateOfBirth()))
+                    .gender(Gender.valueOf(request.getGender().toUpperCase()))
+                    .profileImage("")
+                    .location(Location.builder()
+                            .country(request.getCountry())
+                            .city(request.getCity())
+                            .street(request.getStreet())
+                            .number(request.getNumber())
+                            .build())
+                    .build();
+            repository.save(user);
+            //neo4j
+            UserNeo4j userNeo4j = UserNeo4j.builder()
+                    .id(user.getId().longValue())
+                    .email(user.getEmail())
+                    .firstname(user.getFirstname())
+                    .lastname(user.getLastname())
+                    .profileImage("")
+                    .country(request.getCountry())
+                    .city(request.getCity())
+                    .street(request.getStreet())
+                    .number(request.getNumber())
+                    .build();
+
+            userNeo4jRepository.save(userNeo4j);
+
+            JsonNode locationInformation = geocoder.getLocationInformationFromAddress(addressString);
+            JsonNode position = locationInformation.get("position");
+
+            Double lat = position.get("lat").asDouble();
+            Double lng = position.get("lng").asDouble();
+
+            UserMongo userMongo = UserMongo.builder()
+                    .id(user.getId())
+                    .location(new GeoJsonPoint(lat, lng))
+                    .build();
+            userMongoRepository.save(userMongo);
         }
     }
 

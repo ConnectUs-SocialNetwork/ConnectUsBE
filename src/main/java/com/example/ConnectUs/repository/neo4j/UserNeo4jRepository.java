@@ -48,8 +48,8 @@ public interface UserNeo4jRepository extends Neo4jRepository<UserNeo4j, Long> {
             "WITH friendFriend, COLLECT(userFriend) AS commonFriends\n" +
             "WHERE SIZE(commonFriends) >= 5\n" +
             "AND NOT friendFriend.id = $userID\n" +
-            "RETURN DISTINCT friendFriend")
-    List<UserNeo4j> recommendFriendsOfMyFriends(@Param("userID") Long userID);
+            "RETURN DISTINCT friendFriend.long")
+    List<Long> recommendFriendsOfMyFriends(@Param("userID") Long userID);
 
     @Query("MATCH (currentUser:user {id: $yourId}) " +
             "MATCH (user:user) " +
@@ -71,6 +71,13 @@ public interface UserNeo4jRepository extends Neo4jRepository<UserNeo4j, Long> {
             "MATCH (p:page {category: likedPage.category}) " +
             "WITH friendOfFriend, p as correspondingPages " +
             "MATCH (correspondingPages)-[:LIKED_BY]->(potentialFriend:user {id: friendOfFriend.id}) " +
-            "RETURN potentialFriend")
-    List<UserNeo4j> recommendUsersBasedOnTheirInterest(@Param("yourId") Long yourId);
+            "RETURN potentialFriend.id")
+    List<Long> recommendUsersBasedOnTheirInterest(@Param("yourId") Long yourId);
+
+    @Query("MATCH (currentUser:user {id: $yourId}) " +
+            "MATCH (user:user) " +
+            "WHERE NOT (currentUser)-[:FRIENDS_WITH]-(user) and user.id<>$yourId " +
+            "RETURN user.id " +
+            "LIMIT 50")
+    List<Long> findSupplementaryRecommendations(@Param("yourId") Long yourId);
 }

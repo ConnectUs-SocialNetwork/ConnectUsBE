@@ -324,25 +324,27 @@ public class UserService {
         return recommendedUsers.stream().map((UserMongo::getId)).collect(Collectors.toList()).stream().map(Integer::longValue).collect(Collectors.toList());
     }
 
-    public List<Long> recommendFriendsOfMyFriends(Long userId){
-        List<UserNeo4j> userList = userNeo4jRepository.recommendFriendsOfMyFriends(userId);
-        return userList.stream().map(UserNeo4j::getId).collect(Collectors.toList());
-    }
-
-    public List<Long> recommendUsersBasedOnTheirInterest(Long userId){
-        List<UserNeo4j> userList = userNeo4jRepository.recommendUsersBasedOnTheirInterest(userId);
-        return userList.stream().map(UserNeo4j::getId).collect(Collectors.toList());
-    }
-
     public List<RecommendedUserResponse> getRecommendedUsers(Long userId){
         List<Long> allRecommendedUserIds = new ArrayList<>();
-        allRecommendedUserIds.addAll(recommendUsersWithinXkm(userId.intValue(), 10));
-        allRecommendedUserIds.addAll(recommendFriendsOfMyFriends(userId));
-        allRecommendedUserIds.addAll(recommendUsersBasedOnTheirInterest(userId));
+        List<Long> supplementaryRecommendations = userNeo4jRepository.findSupplementaryRecommendations(userId);
+        allRecommendedUserIds.addAll(recommendUsersWithinXkm(userId.intValue(), 10).stream().limit(5).collect(Collectors.toList()));
+        allRecommendedUserIds.addAll(userNeo4jRepository.recommendFriendsOfMyFriends(userId).stream().limit(5).collect(Collectors.toList()));
+        allRecommendedUserIds.addAll(userNeo4jRepository.recommendUsersBasedOnTheirInterest(userId).stream().limit(5).collect(Collectors.toList()));
         allRecommendedUserIds.remove(userId);
+        int fromIndex = 0;
+        while(allRecommendedUserIds.size() < 15){
+            int listPaddingLength = 15 - allRecommendedUserIds.size();
+            allRecommendedUserIds.addAll(supplementaryRecommendations.subList(fromIndex, fromIndex + listPaddingLength));
+            allRecommendedUserIds.stream().distinct().collect(Collectors.toList());
+            fromIndex = listPaddingLength;
+        }
+        List<Long> finalList = allRecommendedUserIds;
+        Collections.shuffle(finalList);
 
-        return userNeo4jRepository.findRecommendedUsers(userId, allRecommendedUserIds);
+        return userNeo4jRepository.findRecommendedUsers(userId, finalList);
     }
 
+    /*List<Long> recommendedUsersBasedOnLocation = recommendUsersWithinXkm(userId.intValue(), 10);
+        if(recommendedUsersBasedOnLocation.size() <5)*/
 
 }

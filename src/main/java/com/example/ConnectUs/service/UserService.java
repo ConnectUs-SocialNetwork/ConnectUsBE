@@ -273,7 +273,7 @@ public class UserService {
         userNeo4j.setLastname(updateUserRequest.getLastname());
 
         if (updateUserRequest.getProfileImage() == null) {
-            if(userRepository.findByEmail(updateUserRequest.getEmail()).isPresent() && user.getEmail() != updateUserRequest.getEmail()){
+            if (userRepository.findByEmail(updateUserRequest.getEmail()).isPresent() && user.getEmail() != updateUserRequest.getEmail()) {
                 return UpdateUserResponse.builder()
                         .userResponse(null)
                         .message("The entered email is already in use!")
@@ -324,7 +324,7 @@ public class UserService {
         return recommendedUsers.stream().map((UserMongo::getId)).collect(Collectors.toList()).stream().map(Integer::longValue).collect(Collectors.toList());
     }
 
-    public List<RecommendedUserResponse> getRecommendedUsers(Long userId){
+    public List<RecommendedUserResponse> getRecommendedUsers(Long userId) {
         List<Long> allRecommendedUserIds = new ArrayList<>();
         List<Long> supplementaryRecommendations = userNeo4jRepository.findSupplementaryRecommendations(userId);
         allRecommendedUserIds.addAll(recommendUsersWithinXkm(userId.intValue(), 10).stream().limit(5).collect(Collectors.toList()));
@@ -333,11 +333,11 @@ public class UserService {
         allRecommendedUserIds.remove(userId);
         allRecommendedUserIds = allRecommendedUserIds.stream().distinct().collect(Collectors.toList());
 
-        if(allRecommendedUserIds.size() < 15){
-            for(Long id: supplementaryRecommendations){
-                if(!allRecommendedUserIds.contains(id))
+        if (allRecommendedUserIds.size() < 15) {
+            for (Long id : supplementaryRecommendations) {
+                if (!allRecommendedUserIds.contains(id))
                     allRecommendedUserIds.add(id);
-                if(allRecommendedUserIds.size() == 15)
+                if (allRecommendedUserIds.size() == 15)
                     break;
             }
         }
@@ -345,7 +345,25 @@ public class UserService {
         List<Long> finalList = allRecommendedUserIds;
         Collections.shuffle(finalList);
 
-        return userNeo4jRepository.findRecommendedUsers(userId, finalList);
+        //return userNeo4jRepository.findRecommendedUsers(userId, finalList);
+        List<UserNeo4j> users = userNeo4jRepository.findAllById(finalList);
+        List<RecommendedUserResponse> retList = new ArrayList<>();
+        for (UserNeo4j user : users) {
+            retList.add(RecommendedUserResponse.builder()
+                    .id(user.getId())
+                    .firstname(user.getFirstname())
+                    .lastname(user.getLastname())
+                    .profileImage(user.getProfileImage())
+                    .country(user.getCountry())
+                    .city(user.getCity())
+                    .street(user.getStreet())
+                    .number(user.getNumber())
+                    .email(user.getEmail())
+                    .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(user.getId().intValue()))
+                    .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(user.getId().intValue(), userId.intValue()))
+                    .build());
+        }
+        return retList;
     }
 
 }

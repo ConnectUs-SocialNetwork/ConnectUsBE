@@ -51,11 +51,16 @@ public class PostService {
     public PostResponse save(PostRequest request) {
         User user = userService.findByEmail(request.getUserEmail()).orElse(new User());
         List<Image> images = new ArrayList<>();
+        List<User> taggedUsers = new ArrayList<>();
+        for(Integer id : request.getTaggedUserIds()){
+            taggedUsers.add(userService.findById(id));
+        }
 
         Post post = Post.builder()
                 .text(request.getPostText())
                 .dateAndTime(LocalDateTime.now())
                 .user(user)
+                .taggedUsers(taggedUsers)
                 .build();
 
         for (String i : request.getImages()) {
@@ -74,6 +79,21 @@ public class PostService {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedDateTime = savedPost.getDateAndTime().format(formatter);
+
+        List<SearchUserResponse> taggedUsersList = new ArrayList<>();
+        for(User u : savedPost.getTaggedUsers()){
+            taggedUsersList.add(SearchUserResponse.builder()
+                    .id(u.getId())
+                    .friend(u.getFriends().contains(user))
+                    .profileImage(u.getProfileImage())
+                    .email(u.getEmail())
+                    .firstname(u.getFirstname())
+                    .lastname(u.getLastname())
+                    .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId()))
+                    .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId(), user.getId()))
+                    .build());
+        }
+
         return PostResponse.builder()
                 .isLiked(false)
                 .id(savedPost.getId())
@@ -85,6 +105,7 @@ public class PostService {
                 .dateAndTime(formattedDateTime)
                 .numberOfLikes(0)
                 .numberOfComments(0)
+                .taggedUsers(taggedUsersList)
                 .build();
     }
 
@@ -166,6 +187,19 @@ public class PostService {
             String formattedDateTime = post.getDateAndTime().format(formatter);
             boolean isLiked = post.getLikes().contains(user);
             int numberOfComments = commentRepository.countAllCommentsByPostId(post.getId());
+            List<SearchUserResponse> taggedUsers = new ArrayList<>();
+            for(User u : post.getTaggedUsers()){
+                taggedUsers.add(SearchUserResponse.builder()
+                                .id(u.getId())
+                                .friend(u.getFriends().contains(user))
+                                .profileImage(u.getProfileImage())
+                                .email(u.getEmail())
+                                .firstname(u.getFirstname())
+                                .lastname(u.getLastname())
+                                .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId()))
+                                .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId(), user.getId()))
+                        .build());
+            }
 
             PostResponse postResponse = PostResponse.builder()
                     .id(post.getId())
@@ -179,6 +213,7 @@ public class PostService {
                     .numberOfLikes(post.getLikes().size())
                     .numberOfComments(numberOfComments)
                     .profileImage(post.getUser().getProfileImage())
+                    .taggedUsers(taggedUsers)
                     .build();
             postResponseList.add(postResponse);
         }
@@ -277,6 +312,20 @@ public class PostService {
         boolean isLiked = post.getLikes().contains(user);
         int numberOfComments = commentRepository.countAllCommentsByPostId(post.getId());
 
+        List<SearchUserResponse> taggedUsersList = new ArrayList<>();
+        for(User u : post.getTaggedUsers()){
+            taggedUsersList.add(SearchUserResponse.builder()
+                    .id(u.getId())
+                    .friend(u.getFriends().contains(user))
+                    .profileImage(u.getProfileImage())
+                    .email(u.getEmail())
+                    .firstname(u.getFirstname())
+                    .lastname(u.getLastname())
+                    .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId()))
+                    .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId(), user.getId()))
+                    .build());
+        }
+
         PostResponse postResponse = PostResponse.builder()
                 .id(post.getId())
                 .userId(post.getUser().getId())
@@ -289,6 +338,7 @@ public class PostService {
                 .numberOfLikes(post.getLikes().size())
                 .numberOfComments(numberOfComments)
                 .profileImage(post.getUser().getProfileImage())
+                .taggedUsers(taggedUsersList)
                 .build();
 
         return postResponse;

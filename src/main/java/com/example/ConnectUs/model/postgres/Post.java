@@ -42,4 +42,13 @@ public class Post {
 
     @OneToMany(mappedBy = "post")
     private List<Image> images;
+
+    @ManyToMany
+    @JoinTable(
+            name = "post_tagged_users",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    @JsonIgnore
+    private List<User> taggedUsers;
 }

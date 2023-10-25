@@ -27,4 +27,13 @@ public class ImageController {
             return ResponseEntity.status(500).body(null);
         }
     }
+
+    @GetMapping("/getUserTaggedImages")
+    public ResponseEntity<List<ImageResponse>> getUserTaggedImages(@RequestParam Integer userId){
+        try{
+            return ResponseEntity.ok(imageService.getUserTaggedImages(userId));
+        }catch (DataAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package com.example.ConnectUs.dto.post;
 
 import com.example.ConnectUs.dto.authentication.UserResponse;
+import com.example.ConnectUs.dto.searchUsers.SearchUserResponse;
 import com.example.ConnectUs.model.postgres.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Lob;
@@ -29,6 +30,7 @@ public class PostResponse implements Comparable<PostResponse>{
     private boolean isLiked;
     private Integer numberOfLikes;
     private Integer numberOfComments;
+    private List<SearchUserResponse> taggedUsers;
 
     @Override
     public int compareTo(PostResponse postResponse) {

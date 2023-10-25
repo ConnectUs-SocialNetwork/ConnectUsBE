@@ -50,6 +50,9 @@ public class User implements UserDetails {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Location location;
 
+    @ManyToMany(mappedBy = "taggedUsers")
+    private List<Post> taggedPosts;
+
     @ManyToMany
     @JoinTable(
             name = "friendship",

@@ -16,4 +16,5 @@ public class PostRequest {
     private String postText;
     private List<String> images;
     private String userEmail;
+    private List<Integer> taggedUserIds;
 }

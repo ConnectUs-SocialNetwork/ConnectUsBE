@@ -12,6 +12,7 @@ import com.example.ConnectUs.model.postgres.Token;
 import com.example.ConnectUs.model.postgres.User;
 import com.example.ConnectUs.repository.mongo.UserMongoRepository;
 import com.example.ConnectUs.repository.neo4j.UserNeo4jRepository;
+import com.example.ConnectUs.repository.postgres.LocationRepository;
 import com.example.ConnectUs.repository.postgres.TokenRepository;
 import com.example.ConnectUs.repository.postgres.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -50,7 +51,7 @@ public class AuthenticationService {
     private final UserService userService;
     private final UserMongoRepository userMongoRepository;
     private final Geocoder geocoder;
-    private final MongoTemplate mongoTemplate;
+    private final LocationRepository locationRepository;
 
     @Transactional(value = "chainedTransactionManager")
     public AuthenticationResponse register(RegisterRequest request) {
@@ -81,6 +82,12 @@ public class AuthenticationService {
             }
 
             //postgres
+            Location location = Location.builder()
+                    .country(request.getCountry())
+                    .city(request.getCity())
+                    .street(request.getStreet())
+                    .number(request.getNumber())
+                    .build();
             var user = User.builder()
                     .firstname(request.getFirstname())
                     .lastname(request.getLastname())
@@ -90,14 +97,11 @@ public class AuthenticationService {
                     .dateOfBirth(LocalDate.parse(request.getDateOfBirth()))
                     .gender(Gender.valueOf(request.getGender().toUpperCase()))
                     .profileImage("")
-                    .location(Location.builder()
-                            .country(request.getCountry())
-                            .city(request.getCity())
-                            .street(request.getStreet())
-                            .number(request.getNumber())
-                            .build())
+                    .location(location)
                     .build();
+            location.setUser(user);
             var savedUser = repository.save(user);
+            locationRepository.save(location);
             var jwtToken = jwtService.generateToken(user);
             var refreshToken = jwtService.generateRefreshToken(user);
             saveUserToken(savedUser, jwtToken);

@@ -279,4 +279,51 @@ public class PageService {
                 .administratorId(page.getAdministrator().getId())
                 .build();
     }
+
+    public String convertToTitleCase(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        String firstLetter = input.substring(0, 1).toUpperCase();
+        String restOfWord = input.substring(1).toLowerCase();
+
+        return firstLetter + restOfWord;
+    }
+
+    public List<RecommendedPageResponse> recommendPagesThatHaveBeenLikedByMyFriends(Long yourId){
+        List<RecommendedPageResponse> retList = new ArrayList<>();
+        List<Long> pageIds = pageNeo4jRepository.recommendPagesThatHaveBeenLikedByMyFriends(yourId);
+        for(Long id: pageIds){
+            Page page = pageRepository.findById(id.intValue()).orElseThrow();
+            int numberOfLikes = pageNeo4jRepository.getNumberOfLikes(id);
+            RecommendedPageResponse recommendedPageResponse = RecommendedPageResponse.builder()
+                    .id(page.getId())
+                    .administratorId(page.getAdministrator().getId())
+                    .numberOfLikes(numberOfLikes)
+                    .avatar(page.getAvatar())
+                    .category(convertToTitleCase(page.getCategory().toString()))
+                    .description(page.getDescription())
+                    .name(page.getName())
+                    .build();
+            retList.add(recommendedPageResponse);
+        }
+        if(retList.size() < 15){
+            List<Long> supplementaryPageIds = pageNeo4jRepository.getSupplementaryPages(yourId, pageIds);
+            for(Long id: supplementaryPageIds) {
+                Page page = pageRepository.findById(id.intValue()).orElseThrow();
+                int numberOfLikes = pageNeo4jRepository.getNumberOfLikes(id);
+                RecommendedPageResponse recommendedPageResponse = RecommendedPageResponse.builder()
+                        .id(page.getId())
+                        .administratorId(page.getAdministrator().getId())
+                        .numberOfLikes(numberOfLikes)
+                        .avatar(page.getAvatar())
+                        .category(convertToTitleCase(page.getCategory().toString()))
+                        .description(page.getDescription())
+                        .name(page.getName())
+                        .build();
+                retList.add(recommendedPageResponse);
+            }
+        }
+        return retList;
+    }
 }

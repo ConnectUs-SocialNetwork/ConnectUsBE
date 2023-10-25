@@ -104,4 +104,9 @@ public class PageController {
             return ResponseEntity.status(500).body(null);
         }
     }
+
+    @GetMapping("/getRecommendedPages")
+    public ResponseEntity<List<RecommendedPageResponse>> getRecommendedPages(@RequestParam Integer userId){
+        return ResponseEntity.ok(pageService.recommendPagesThatHaveBeenLikedByMyFriends(userId.longValue()));
+    }
 }

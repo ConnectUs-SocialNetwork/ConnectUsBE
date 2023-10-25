@@ -348,7 +348,4 @@ public class UserService {
         return userNeo4jRepository.findRecommendedUsers(userId, finalList);
     }
 
-    /*List<Long> recommendedUsersBasedOnLocation = recommendUsersWithinXkm(userId.intValue(), 10);
-        if(recommendedUsersBasedOnLocation.size() <5)*/
-
 }

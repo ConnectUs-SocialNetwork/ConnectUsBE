@@ -349,6 +349,12 @@ public class UserService {
         List<UserNeo4j> users = userNeo4jRepository.findAllById(finalList);
         List<RecommendedUserResponse> retList = new ArrayList<>();
         for (UserNeo4j user : users) {
+            boolean heSentFriendRequest = friendRequestRepository.hasPendingFriendRequest(user.getId().intValue(), userId.intValue());
+            Integer requestId = -1;
+
+            if (heSentFriendRequest) {
+                requestId = friendRequestRepository.getPendingFriendRequestByUserIdAndFriendId(user.getId().intValue(), userId.intValue()).getId();
+            }
             retList.add(RecommendedUserResponse.builder()
                     .id(user.getId())
                     .firstname(user.getFirstname())
@@ -363,6 +369,7 @@ public class UserService {
                     .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(user.getId().intValue(), userId.intValue()))
                     .requestSentByMe(friendRequestRepository.hasPendingFriendRequest(userId.intValue(), user.getId().intValue()))
                     .heSentFriendRequest(friendRequestRepository.hasPendingFriendRequest(user.getId().intValue(), userId.intValue()))
+                    .requestId(requestId)
                     .build());
         }
         return retList;

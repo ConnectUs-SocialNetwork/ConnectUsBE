@@ -23,4 +23,5 @@ public class RecommendedUserResponse {
     private String number;
     boolean requestSentByMe;
     boolean heSentFriendRequest;
+    private Integer requestId;
 }

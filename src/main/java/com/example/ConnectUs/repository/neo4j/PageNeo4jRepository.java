@@ -39,12 +39,12 @@ public interface PageNeo4jRepository extends Neo4jRepository<PageNeo4j, Long> {
     @Query("MATCH (user: user {id: $yourId})-[:FRIENDS_WITH]->(friend:user) " +
             "MATCH (page:page)-[:LIKED_BY]->(friend) " +
             "WHERE NOT (page)-[:LIKED_BY]->(user) " +
-            "RETURN page.id")
+            "RETURN DISTINCT page.id")
     List<Long> recommendPagesThatHaveBeenLikedByMyFriends(@Param("yourId") Long yourId);
 
     @Query("MATCH (user:user {id: $yourId}) " +
             "MATCH (page:page) " +
             "WHERE NOT (page)-[:LIKED_BY]->(user) AND NOT page.id IN $pageIds " +
-            "RETURN page.id")
+            "RETURN DISTINCT page.id")
     List<Long> getSupplementaryPages(@Param("yourId") Long yourId, @Param("pageIds") List<Long> pageIds);
 }

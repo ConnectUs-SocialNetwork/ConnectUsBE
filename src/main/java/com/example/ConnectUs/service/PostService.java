@@ -106,6 +106,22 @@ public class PostService {
                 .numberOfLikes(0)
                 .numberOfComments(0)
                 .taggedUsers(taggedUsersList)
+                .userId(user.getId())
+                .build();
+    }
+
+    @Transactional
+    public PostResponse delete(Integer postId){
+        Post post = postRepository.findById(postId).orElseThrow();
+        postRepository.delete(post);
+
+        return PostResponse.builder()
+                .id(post.getId())
+                .firstname(post.getUser().getFirstname())
+                .lastname(post.getUser().getLastname())
+                .profileImage(post.getUser().getProfileImage())
+                .numberOfLikes(0)
+                .numberOfComments(0)
                 .build();
     }
 

@@ -65,6 +65,14 @@ public class CommentService {
         }
     }
 
+    public CommentResponse delete(Integer commentId){
+        Comment comment = commentRepository.findById(commentId).orElseThrow();
+        commentRepository.delete(comment);
+        return CommentResponse.builder()
+                .id(comment.getId())
+                .build();
+    }
+
     public List<CommentResponse> getComments(Integer postId) {
         try {
             List<Comment> postComments = commentRepository.findAllByPagePostId(postId);

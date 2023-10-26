@@ -38,6 +38,11 @@ public class PostController {
         return ResponseEntity.ok(postService.save(request));
     }
 
+    @DeleteMapping("/delete")
+    public ResponseEntity<PostResponse> delete(@RequestParam Integer postId){
+        return ResponseEntity.ok(postService.delete(postId));
+    }
+
     @GetMapping("/feed")
     public ResponseEntity<PostsResponse> getPostsForFeed(@RequestParam Integer userId){
         return ResponseEntity.ok(postService.getPostsForFeed(userId));

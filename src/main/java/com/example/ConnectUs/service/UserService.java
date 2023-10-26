@@ -361,6 +361,8 @@ public class UserService {
                     .email(user.getEmail())
                     .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(user.getId().intValue()))
                     .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(user.getId().intValue(), userId.intValue()))
+                    .requestSentByMe(friendRequestRepository.hasPendingFriendRequest(userId.intValue(), user.getId().intValue()))
+                    .heSentFriendRequest(friendRequestRepository.hasPendingFriendRequest(user.getId().intValue(), userId.intValue()))
                     .build());
         }
         return retList;

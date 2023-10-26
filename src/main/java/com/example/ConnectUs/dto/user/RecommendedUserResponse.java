@@ -21,4 +21,6 @@ public class RecommendedUserResponse {
     private String city;
     private String street;
     private String number;
+    boolean requestSentByMe;
+    boolean heSentFriendRequest;
 }

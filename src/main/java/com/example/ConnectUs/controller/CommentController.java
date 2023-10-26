@@ -28,6 +28,11 @@ public class CommentController {
         }
     }
 
+    @DeleteMapping("/delete")
+    public ResponseEntity<CommentResponse> delete(@RequestParam Integer commentId){
+        return ResponseEntity.ok(commentService.delete(commentId));
+    }
+
     @GetMapping
     public ResponseEntity<List<CommentResponse>> getComments(@RequestParam Integer postId){
         try{

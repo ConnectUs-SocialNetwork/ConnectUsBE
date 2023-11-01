@@ -20,8 +20,4 @@ public class Location {
     private String street;
     private String city;
     private String country;
-
-    @OneToOne
-    @JoinColumn(name = "user_id")
-    private User user;
 }

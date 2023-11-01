@@ -246,10 +246,10 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
 
-        List<Post> likedPosts = user.getLikedPosts();
-        likedPosts.add(post);
-        user.setLikedPosts(likedPosts);
-        userRepository.save(user);
+        Set<User> usersWhoLikes = post.getLikes();
+        usersWhoLikes.add(user);
+        post.setLikes(usersWhoLikes);
+        postRepository.save(post);
 
         if (post.getUser().getId() != user.getId()) {
             notificationService.save(Notification.builder()
@@ -274,10 +274,10 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
 
-        List<Post> likedPosts = user.getLikedPosts();
-        likedPosts.remove(post);
-        user.setLikedPosts(likedPosts);
-        userRepository.save(user);
+        Set<User> usersWhoLikes = post.getLikes();
+        usersWhoLikes.remove(user);
+        post.setLikes(usersWhoLikes);
+        postRepository.save(post);
     }
 
     @Transactional
@@ -306,11 +306,13 @@ public class PostService {
                         .email(u.getEmail())
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
+                        .country(u.getLocation().getCountry())
+                        .city(u.getLocation().getCity())
+                        .street(u.getLocation().getStreet())
+                        .number(u.getLocation().getNumber())
+                        .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()))
+                        .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), myId.intValue()))
                         .build();
-                if (!searchUserResponse.isFriend()) {
-                    searchUserResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
-                    searchUserResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), myId.intValue()));
-                }
                 responseList.add(searchUserResponse);
             }
             return responseList;
@@ -337,8 +339,12 @@ public class PostService {
                     .email(u.getEmail())
                     .firstname(u.getFirstname())
                     .lastname(u.getLastname())
-                    .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId()))
-                    .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId(), user.getId()))
+                    .country(u.getLocation().getCountry())
+                    .city(u.getLocation().getCity())
+                    .street(u.getLocation().getStreet())
+                    .number(u.getLocation().getNumber())
+                    .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()))
+                    .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), myId.intValue()))
                     .build());
         }
 

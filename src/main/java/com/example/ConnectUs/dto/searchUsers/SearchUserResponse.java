@@ -15,4 +15,8 @@ public class SearchUserResponse {
     private boolean friend;
     private Integer numberOfFriends;
     private Integer numberOfMutualFriends;
+    private String country;
+    private String city;
+    private String street;
+    private String number;
 }

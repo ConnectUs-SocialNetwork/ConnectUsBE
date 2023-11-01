@@ -62,11 +62,13 @@ public class UserService {
                         .email(u.getEmail())
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
+                        .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()))
+                        .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), userId.intValue()))
+                        .country(u.getCountry())
+                        .city(u.getCity())
+                        .street(u.getStreet())
+                        .number(u.getNumber())
                         .build();
-                if (!searchUserResponse.isFriend()) {
-                    searchUserResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
-                    searchUserResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), userId.intValue()));
-                }
                 responseList.add(searchUserResponse);
             }
             return responseList;
@@ -90,11 +92,13 @@ public class UserService {
                         .email(u.getEmail())
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
+                        .country(u.getLocation().getCountry())
+                        .city(u.getLocation().getCity())
+                        .street(u.getLocation().getStreet())
+                        .number(u.getLocation().getNumber())
+                        .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()))
+                        .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), userId.intValue()))
                         .build();
-                if (!searchUserResponse.isFriend()) {
-                    searchUserResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
-                    searchUserResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), userId.intValue()));
-                }
                 responseList.add(searchUserResponse);
             }
             return responseList;
@@ -116,11 +120,14 @@ public class UserService {
                         .lastname(u.getLastname())
                         .email(u.getEmail())
                         .profileImage(u.getProfileImage())
+                        .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()))
+                        .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), userId.intValue()))
+                        .country(u.getCountry())
+                        .city(u.getCity())
+                        .street(u.getStreet())
+                        .number(u.getNumber())
                         .build();
-                if (!userResponse.isFriend()) {
-                    userResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
-                    userResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), userId.intValue()));
-                }
+
 
                 responseList.add(userResponse);
             }

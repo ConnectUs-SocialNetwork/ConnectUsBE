@@ -1,5 +1,6 @@
 package com.example.ConnectUs.model.postgres;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +27,12 @@ public class PagePost {
     @JoinColumn(name = "page_id")
     private Page page;
 
-    @ManyToMany(mappedBy = "likedPagePosts")
+    @ManyToMany
+    @JoinTable(
+            name = "page_post_like",
+            joinColumns = @JoinColumn(name = "page_post_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @JsonIgnore
     private List<User> likes;
 
     @OneToMany(mappedBy = "pagePost")

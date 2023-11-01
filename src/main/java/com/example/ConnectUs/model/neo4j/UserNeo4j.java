@@ -33,4 +33,6 @@ public class UserNeo4j {
     @Relationship(type = "FRIENDS_WITH")
     private List<UserNeo4j> friends;
 
+    @Relationship(type = "SEND_FRIEND_REQUEST", direction = Relationship.Direction.OUTGOING)
+    private List<UserNeo4j> sentFriendRequests;
 }

@@ -39,6 +39,26 @@ public class PageController {
         }
     }
 
+    @PostMapping("/saveAll")
+    public ResponseEntity<List<PageResponse>> saveAll(@RequestBody  List<PageRequest> pageRequestList){
+        try{
+            List<PageResponse> retList = new ArrayList<>();
+            for(PageRequest pageRequest : pageRequestList){
+                Page page = pageService.save(pageRequest);
+                PageResponse pageResponse = PageResponse.builder()
+                        .category(page.getCategory().toString())
+                        .administratorId(page.getAdministrator().getId())
+                        .name(page.getName())
+                        .description(page.getDescription())
+                        .build();
+                retList.add(pageResponse);
+            }
+            return ResponseEntity.ok(retList);
+        }catch (DatabaseAccessException e){
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
     @GetMapping("/getViewPageResponse")
     public ResponseEntity<ViewPageResponse> getViewPageResponse(@RequestParam("pageId") Integer pageId, @RequestParam("userId") Integer userId){
         try{

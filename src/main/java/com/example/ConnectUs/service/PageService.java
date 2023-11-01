@@ -48,9 +48,19 @@ public class PageService {
             } else if (pageRequest.getCategory().equals("Fashion")) {
                 category = PageCategory.FASHION;
             } else if (pageRequest.getCategory().equals("Fitness and Wellness")) {
-                category = PageCategory.FITNESS_AND_WELLNES;
-            } else {
+                category = PageCategory.FITNESS_AND_WELLNESS;
+            } else if (pageRequest.getCategory().equals("Entertainment")){
                 category = PageCategory.ENTERTAINMENT;
+            } else if (pageRequest.getCategory().equals("Music")){
+                category = PageCategory.MUSIC;
+            } else if (pageRequest.getCategory().equals("Sport")){
+                category = PageCategory.SPORT;
+            } else if (pageRequest.getCategory().equals("Technology")){
+                category = PageCategory.TECHNOLOGY;
+            } else if (pageRequest.getCategory().equals("Business")){
+                category = PageCategory.BUSINESS;
+            } else {
+                category = PageCategory.BOOKS_AND_READING;
             }
 
             Page page = Page.builder()
@@ -252,9 +262,19 @@ public class PageService {
             } else if (updatePageRequest.getCategory().equals("Fashion")) {
                 category = PageCategory.FASHION;
             } else if (updatePageRequest.getCategory().equals("Fitness and Wellness")) {
-                category = PageCategory.FITNESS_AND_WELLNES;
-            } else {
+                category = PageCategory.FITNESS_AND_WELLNESS;
+            } else if (updatePageRequest.getCategory().equals("Entertainment")){
                 category = PageCategory.ENTERTAINMENT;
+            } else if (updatePageRequest.getCategory().equals("Music")){
+                category = PageCategory.MUSIC;
+            } else if (updatePageRequest.getCategory().equals("Sport")){
+                category = PageCategory.SPORT;
+            } else if (updatePageRequest.getCategory().equals("Technology")){
+                category = PageCategory.TECHNOLOGY;
+            } else if (updatePageRequest.getCategory().equals("Business")){
+                category = PageCategory.BUSINESS;
+            } else {
+                category = PageCategory.BOOKS_AND_READING;
             }
             page.setCategory(category);
             page.setDescription(updatePageRequest.getDescription());
@@ -317,7 +337,7 @@ public class PageService {
                         .administratorId(page.getAdministrator().getId())
                         .numberOfLikes(numberOfLikes)
                         .avatar(page.getAvatar())
-                        .category(convertToTitleCase(page.getCategory().toString()))
+                        .category(transformCategoryString(page.getCategory().toString()))
                         .description(page.getDescription())
                         .name(page.getName())
                         .build();

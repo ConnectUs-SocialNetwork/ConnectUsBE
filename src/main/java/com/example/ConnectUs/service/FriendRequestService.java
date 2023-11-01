@@ -32,7 +32,7 @@ public class FriendRequestService {
     private final NotificationService notificationService;
     private final NotificationRepository notificationRepository;
 
-    @Transactional
+    @Transactional(value = "chainedTransactionManager")
     public boolean addFriend(Integer userId, Integer friendId) {
         try {
             User user = userRepository.findById(userId).orElseThrow();
@@ -43,6 +43,14 @@ public class FriendRequestService {
                     .status(FriendRequestStatus.PENDING)
                     .build();
             friendRequestRepository.save(friendRequest);
+
+            UserNeo4j userNeo4j = userNeo4jRepository.findUserById(userId);
+            UserNeo4j friendNeo4j = userNeo4jRepository.findUserById(friendId);
+
+            List<UserNeo4j> usersToWhomISentTheRequest = userNeo4j.getSentFriendRequests();
+            usersToWhomISentTheRequest.add(friendNeo4j);
+            userNeo4j.setSentFriendRequests(usersToWhomISentTheRequest);
+            userNeo4jRepository.save(userNeo4j);
 
             notificationService.save(Notification.builder()
                     .firstname(user.getFirstname())
@@ -98,6 +106,8 @@ public class FriendRequestService {
             User friend = userRepository.findById(friendRequest.getFriend().getId()).orElseThrow();
             UserNeo4j friendNeo4j = userNeo4jRepository.findUserById(friendRequest.getFriend().getId());
 
+            userNeo4jRepository.deleteFriendRequest(friendRequest.getUser().getId().longValue(), friendRequest.getFriend().getId().longValue());
+
             savePostgresFriend(user, friend);
             saveNeo4jFriend(userNeo4j, friendNeo4j);
 
@@ -107,6 +117,7 @@ public class FriendRequestService {
 
         } else {
             friendRequest.setStatus(FriendRequestStatus.REJECTED);
+            userNeo4jRepository.deleteFriendRequest(friendRequest.getUser().getId().longValue(), friendRequest.getFriend().getId().longValue());
             notificationRepository.deleteFriendRequestNotificationsByRequestId(friendRequest.getId());
         }
         FriendRequest savedFriendRequest = friendRequestRepository.save(friendRequest);
@@ -146,5 +157,7 @@ public class FriendRequestService {
         FriendRequest fr = friendRequestRepository.getPendingFriendRequestByUserIdAndFriendId(data.getUserId(), data.getFriendId());
         friendRequestRepository.deleteByUserIdAndFriendId(data.getFriendId(), data.getUserId());
         notificationRepository.deleteFriendRequestNotificationsByEntityId(fr.getId());
+
+        userNeo4jRepository.deleteFriendRequest(fr.getUser().getId().longValue(), fr.getFriend().getId().longValue());;
     }
 }

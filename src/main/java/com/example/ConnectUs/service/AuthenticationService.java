@@ -99,7 +99,6 @@ public class AuthenticationService {
                     .profileImage("")
                     .location(location)
                     .build();
-            location.setUser(user);
             var savedUser = repository.save(user);
             locationRepository.save(location);
             var jwtToken = jwtService.generateToken(user);
@@ -142,6 +141,12 @@ public class AuthenticationService {
     public void saveAllUsers(List<RegisterRequest> registerRequests){
         for(RegisterRequest request : registerRequests){
             String addressString = String.format("%s, %s, %s %s", request.getCountry(), request.getCity(), request.getStreet(), request.getNumber());
+            Location location = Location.builder()
+                    .country(request.getCountry())
+                    .city(request.getCity())
+                    .street(request.getStreet())
+                    .number(request.getNumber())
+                    .build();
             var user = User.builder()
                     .firstname(request.getFirstname())
                     .lastname(request.getLastname())
@@ -151,14 +156,10 @@ public class AuthenticationService {
                     .dateOfBirth(LocalDate.parse(request.getDateOfBirth()))
                     .gender(Gender.valueOf(request.getGender().toUpperCase()))
                     .profileImage("")
-                    .location(Location.builder()
-                            .country(request.getCountry())
-                            .city(request.getCity())
-                            .street(request.getStreet())
-                            .number(request.getNumber())
-                            .build())
+                    .location(location)
                     .build();
             repository.save(user);
+            locationRepository.save(location);
             //neo4j
             UserNeo4j userNeo4j = UserNeo4j.builder()
                     .id(user.getId().longValue())

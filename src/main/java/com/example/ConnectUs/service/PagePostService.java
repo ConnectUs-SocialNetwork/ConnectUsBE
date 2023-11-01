@@ -156,10 +156,10 @@ public class PagePostService {
 
             PagePost post = postRepository.findById(postId).orElseThrow();
 
-            List<PagePost> likedPosts = user.getLikedPagePosts();
-            likedPosts.add(post);
-            user.setLikedPagePosts(likedPosts);
-            userRepository.save(user);
+            List<User> userWhoLikes = post.getLikes();
+            userWhoLikes.add(user);
+            post.setLikes(userWhoLikes);
+            postRepository.save(post);
 
             if(post.getPage().getAdministrator().getId() != user.getId()){
                 notificationService.save(Notification.builder()
@@ -186,10 +186,10 @@ public class PagePostService {
 
             PagePost post = postRepository.findById(postId).orElseThrow();
 
-            List<PagePost> likedPosts = user.getLikedPagePosts();
-            likedPosts.remove(post);
-            user.setLikedPagePosts(likedPosts);
-            userRepository.save(user);
+            List<User> userWhoLikes = post.getLikes();
+            userWhoLikes.remove(user);
+            post.setLikes(userWhoLikes);
+            postRepository.save(post);
         } catch (DataAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
@@ -227,11 +227,13 @@ public class PagePostService {
                         .email(u.getEmail())
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
+                        .country(u.getLocation().getCountry())
+                        .city(u.getLocation().getCity())
+                        .street(u.getLocation().getStreet())
+                        .number(u.getLocation().getNumber())
+                        .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()))
+                        .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), myId.intValue()))
                         .build();
-                if(!searchUserResponse.isFriend()){
-                    searchUserResponse.setNumberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()));
-                    searchUserResponse.setNumberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), myId.intValue()));
-                }
                 responseList.add(searchUserResponse);
             }
             return responseList;

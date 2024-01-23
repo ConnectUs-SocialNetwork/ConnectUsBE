@@ -41,13 +41,18 @@ public interface UserNeo4jRepository extends Neo4jRepository<UserNeo4j, Long> {
             "DELETE r")
     void removeFriendsRelation(@Param("userId") Long userId, @Param("friendId") Long friendId);
 
-    @Query("MATCH (user:user {id: $userID})-[:FRIENDS_WITH]->(userFriend:user)\n" +
+    @Query(
+            "MATCH (user:user {id: $userID})-[:FRIENDS_WITH]->(userFriend:user)\n" +
             "MATCH (friendFriend:user)-[:FRIENDS_WITH]->(userFriend)\n" +
-            "WHERE NOT (user)-[:SEND_FRIEND_REQUEST]->(userFriend) AND userFriend.id <> $userID \n" +
+            "WHERE NOT (user)-[:SEND_FRIEND_REQUEST]->(friendFriend) " +
+            "AND NOT (user)-[:FRIEND_WITH]->(friendFriend) " +
+            "AND userFriend.id <> $userID \n" +
             "WITH friendFriend, COLLECT(userFriend) AS commonFriends\n" +
             "WHERE SIZE(commonFriends) >= 5\n" +
             "AND NOT friendFriend.id = $userID\n" +
-            "RETURN DISTINCT friendFriend.id")
+            "RETURN DISTINCT friendFriend.id\n" +
+            "LIMIT 5"
+    )
     List<Long> recommendFriendsOfMyFriends(@Param("userID") Long userID);
 
     @Query("MATCH (currentUser:user {id: $yourId}) " +
@@ -70,19 +75,29 @@ public interface UserNeo4jRepository extends Neo4jRepository<UserNeo4j, Long> {
             "MATCH (p:page {category: likedPage.category}) " +
             "WITH friendOfFriend, p as correspondingPages, currentUser " +
             "MATCH (correspondingPages)-[:LIKED_BY]->(potentialFriend:user {id: friendOfFriend.id}) " +
-            "WHERE NOT (currentUser)-[:SEND_FRIEND_REQUEST]->(potentialFriend)" +
-            "return potentialFriend.id ")
+            "WHERE NOT (currentUser)-[:SEND_FRIEND_REQUEST]->(potentialFriend) " +
+            "AND NOT (currentUser)-[:FRIEND_WITH]->(potentialFriend)\n" +
+            "return DISTINCT potentialFriend.id ")
     List<Long> recommendUsersBasedOnTheirInterest(@Param("yourId") Long yourId);
 
     @Query("MATCH (currentUser:user {id: $yourId}) " +
             "MATCH (user:user) " +
             "WHERE NOT (currentUser)-[:FRIENDS_WITH]-(user) AND user.id <> $yourId " +
             "AND NOT (currentUser)-[:SEND_FRIEND_REQUEST]->(user) " +
+            "AND NOT user.id IN $excludedUserIds " +
             "RETURN user.id " +
-            "LIMIT 50")
-    List<Long> findSupplementaryRecommendations(@Param("yourId") Long yourId);
+            "LIMIT $limit")
+    List<Long> findSupplementaryRecommendations(
+            @Param("yourId") Long yourId,
+            @Param("excludedUserIds") List<Long> excludedUserIds,
+            @Param("limit") int limit
+    );
 
 
     @Query("MATCH (user:user {id: $userId})-[r:SEND_FRIEND_REQUEST]->(friend:user {id: $friendId}) DELETE r")
     void deleteFriendRequest(Long userId, Long friendId);
+
+    @Query("MATCH (currentUser:user {id: $userId})-[:SEND_FRIEND_REQUEST]->(friend:user) RETURN friend.id")
+    List<Long> findUsersSentFriendRequests(@Param("userId") Long userId);
+
 }

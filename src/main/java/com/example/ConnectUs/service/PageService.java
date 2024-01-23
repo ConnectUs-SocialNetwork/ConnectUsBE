@@ -187,6 +187,12 @@ public class PageService {
                         .email(u.getEmail())
                         .firstname(u.getFirstname())
                         .lastname(u.getLastname())
+                        .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId().intValue()))
+                        .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId().intValue(), myId.intValue()))
+                        .country(u.getLocation().getCountry())
+                        .city(u.getLocation().getCity())
+                        .street(u.getLocation().getStreet())
+                        .number(u.getLocation().getNumber())
                         .build();
                 responseList.add(searchUserResponse);
             }
@@ -330,18 +336,22 @@ public class PageService {
         if(retList.size() < 15){
             List<Long> supplementaryPageIds = pageNeo4jRepository.getSupplementaryPages(yourId, pageIds);
             for(Long id: supplementaryPageIds) {
-                Page page = pageRepository.findById(id.intValue()).orElseThrow();
-                int numberOfLikes = pageNeo4jRepository.getNumberOfLikes(id);
-                RecommendedPageResponse recommendedPageResponse = RecommendedPageResponse.builder()
-                        .id(page.getId())
-                        .administratorId(page.getAdministrator().getId())
-                        .numberOfLikes(numberOfLikes)
-                        .avatar(page.getAvatar())
-                        .category(transformCategoryString(page.getCategory().toString()))
-                        .description(page.getDescription())
-                        .name(page.getName())
-                        .build();
-                retList.add(recommendedPageResponse);
+                if(!pageIds.contains(id)){
+                    Page page = pageRepository.findById(id.intValue()).orElseThrow();
+                    int numberOfLikes = pageNeo4jRepository.getNumberOfLikes(id);
+                    RecommendedPageResponse recommendedPageResponse = RecommendedPageResponse.builder()
+                            .id(page.getId())
+                            .administratorId(page.getAdministrator().getId())
+                            .numberOfLikes(numberOfLikes)
+                            .avatar(page.getAvatar())
+                            .category(transformCategoryString(page.getCategory().toString()))
+                            .description(page.getDescription())
+                            .name(page.getName())
+                            .build();
+                    retList.add(recommendedPageResponse);
+                }
+                if(retList.size() == 15)
+                    break;
             }
         }
         return retList;

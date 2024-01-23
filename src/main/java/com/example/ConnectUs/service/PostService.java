@@ -212,6 +212,10 @@ public class PostService {
                                 .email(u.getEmail())
                                 .firstname(u.getFirstname())
                                 .lastname(u.getLastname())
+                                .country(u.getLocation().getCountry())
+                                .city(u.getLocation().getCity())
+                                .street(u.getLocation().getStreet())
+                                .number(u.getLocation().getNumber())
                                 .numberOfFriends(userNeo4jRepository.getNumberOfUserFriends(u.getId()))
                                 .numberOfMutualFriends(userNeo4jRepository.getNumberOfMutualFriends(u.getId(), user.getId()))
                         .build());

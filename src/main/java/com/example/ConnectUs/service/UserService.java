@@ -21,6 +21,8 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -245,6 +247,7 @@ public class UserService {
         userNeo4jRepository.save(friendNeo4j);
     }
 
+
     @Transactional(value = "chainedTransactionManager")
     public void removeFriend(Integer userId, Integer friendId) {
         try {
@@ -262,6 +265,7 @@ public class UserService {
             throw new DatabaseAccessException(e.getMessage());
         }
     }
+
 
     @Transactional(value = "chainedTransactionManager")
     public UpdateUserResponse updateUser(UpdateUserRequest updateUserRequest) {
@@ -322,38 +326,36 @@ public class UserService {
         return prvoSlovoVeliko + ostalaSlovaMala;
     }
 
-    public List<Long> recommendUsersWithinXkm(Integer userId, Integer x) {
+   /* public List<Long> recommendUsersWithinXkm(Integer userId, Integer x) {
         UserMongo user = userMongoRepository.findById(userId).orElseThrow();
         Point point = new Point(user.getLocation().getX(), user.getLocation().getY());
         Distance distance = new Distance(x, Metrics.KILOMETERS);
         List<UserMongo> recommendedUsers = userMongoRepository.findByLocationNear(point, distance);
 
         return recommendedUsers.stream().map((UserMongo::getId)).collect(Collectors.toList()).stream().map(Integer::longValue).collect(Collectors.toList());
-    }
+    }*/
 
-    public List<RecommendedUserResponse> getRecommendedUsers(Long userId) {
-        List<Long> allRecommendedUserIds = new ArrayList<>();
-        List<Long> supplementaryRecommendations = userNeo4jRepository.findSupplementaryRecommendations(userId);
-        allRecommendedUserIds.addAll(recommendUsersWithinXkm(userId.intValue(), 10).stream().limit(5).collect(Collectors.toList()));
-        allRecommendedUserIds.addAll(userNeo4jRepository.recommendFriendsOfMyFriends(userId).stream().limit(5).collect(Collectors.toList()));
-        allRecommendedUserIds.addAll(userNeo4jRepository.recommendUsersBasedOnTheirInterest(userId).stream().limit(5).collect(Collectors.toList()));
-        allRecommendedUserIds.remove(userId);
-        allRecommendedUserIds = allRecommendedUserIds.stream().distinct().collect(Collectors.toList());
+    public List<Long> recommendUsersWithinXkm(Integer userId, Integer x, List<Integer> excludedUserIds) {
+        UserMongo user = userMongoRepository.findById(userId).orElseThrow();
+        Point point = new Point(user.getLocation().getX(), user.getLocation().getY());
 
-        if (allRecommendedUserIds.size() < 15) {
-            for (Long id : supplementaryRecommendations) {
-                if (!allRecommendedUserIds.contains(id))
-                    allRecommendedUserIds.add(id);
-                if (allRecommendedUserIds.size() == 15)
-                    break;
-            }
+        Criteria criteria = Criteria.where("location").nearSphere(point).maxDistance(x);
+        if (!excludedUserIds.isEmpty()) {
+            criteria = criteria.and("id").nin(excludedUserIds);
         }
 
-        List<Long> finalList = allRecommendedUserIds;
-        Collections.shuffle(finalList);
+        Query query = new Query(criteria).limit(5);
 
-        //return userNeo4jRepository.findRecommendedUsers(userId, finalList);
-        List<UserNeo4j> users = userNeo4jRepository.findAllById(finalList);
+        List<UserMongo> recommendedUsers = mongoTemplate.find(query, UserMongo.class);
+
+        return recommendedUsers.stream()
+                .map(UserMongo::getId)
+                .map(Integer::longValue)
+                .collect(Collectors.toList());
+    }
+
+    private List<RecommendedUserResponse> packageAndSortUsers(List<Long> allRecommendedUserIds, Long userId) {
+        List<UserNeo4j> users = userNeo4jRepository.findAllById(allRecommendedUserIds);
         List<RecommendedUserResponse> retList = new ArrayList<>();
         for (UserNeo4j user : users) {
             boolean heSentFriendRequest = friendRequestRepository.hasPendingFriendRequest(user.getId().intValue(), userId.intValue());
@@ -379,6 +381,25 @@ public class UserService {
                     .requestId(requestId)
                     .build());
         }
+        Collections.sort(retList, Comparator.comparingInt(RecommendedUserResponse::getNumberOfMutualFriends).reversed());
+        return retList;
+    }
+
+    public List<RecommendedUserResponse> getRecommendedUsers(Long userId) {
+        List<Long> allRecommendedUserIds = new ArrayList<>();
+        List<Integer> requestedUsersAndFriends = userNeo4jRepository.findUsersSentFriendRequests(userId).stream().map(Long::intValue).collect(Collectors.toList());
+        requestedUsersAndFriends.addAll(userNeo4jRepository.findUserFriends(userId).stream().map(UserNeo4j::getId).collect(Collectors.toList()).stream().map(Long::intValue).collect(Collectors.toList()));
+        allRecommendedUserIds.addAll(recommendUsersWithinXkm(userId.intValue(), 10, requestedUsersAndFriends).stream().collect(Collectors.toList()));
+        allRecommendedUserIds.addAll(userNeo4jRepository.recommendFriendsOfMyFriends(userId).stream().collect(Collectors.toList()));
+        allRecommendedUserIds.addAll(userNeo4jRepository.recommendUsersBasedOnTheirInterest(userId).stream().collect(Collectors.toList()));
+        allRecommendedUserIds.remove(userId);
+        allRecommendedUserIds = allRecommendedUserIds.stream().distinct().collect(Collectors.toList());
+        allRecommendedUserIds.removeAll(requestedUsersAndFriends.stream().map(Integer::longValue).collect(Collectors.toList()));
+        Integer length = 15 - allRecommendedUserIds.size();
+        if(length != 15)
+            allRecommendedUserIds.addAll(userNeo4jRepository.findSupplementaryRecommendations(userId, allRecommendedUserIds, length));
+        List<RecommendedUserResponse> retList = packageAndSortUsers(allRecommendedUserIds, userId);
+
         return retList;
     }
 
